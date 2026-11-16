@@ -1,0 +1,8 @@
+---
+name: db-architect
+description: Acionar ao criar tabelas, escrever queries complexas ou alterar schemas de banco de dados.
+---
+# Boas Práticas de Banco de Dados
+1. **Migrations Seguras:** Nunca altere ou apague colunas em produção sem um plano de migração seguro. Sempre gere arquivos de migration versionados.
+2. **Performance:** Crie índices (indexes) para chaves estrangeiras e colunas usadas frequentemente em filtros (`WHERE`) ou ordenação (`ORDER BY`).
+3. **Prevenção de N+1:** Evite fazer consultas dentro de loops. Use `JOINs`, `include` ou buscas em lote (`IN`).

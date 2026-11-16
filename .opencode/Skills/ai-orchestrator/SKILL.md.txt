@@ -1,0 +1,11 @@
+---
+name: ai-orchestrator
+description: Acionar para tarefas complexas multi-etapas, orquestrando subagentes e skills em sequência lógica.
+---
+# Protocolo de Orquestração Multi-Agente
+Quando receber uma tarefa grande ou complexa, não tente resolver tudo em um único passo. Execute este pipeline:
+
+1. **Decomposição:** Quebre o objetivo em no máximo 4 etapas atômicas e independentes.
+2. **Roteamento de Especialistas:** Atribua cada etapa à skill correspondente do projeto (ex: `context-mapper` -> `db-architect` -> `fullstack-builder` -> `strict-verifier`).
+3. **Execução com Checkpoints:** Execute uma etapa por vez, valide a saída intermediária antes de passar o contexto resumido para a próxima etapa.
+4. **Controle de Contexto:** Passe entre as etapas apenas os contratos, tipos e decisões tomadas, descartando logs longos para não estourar a janela de contexto.

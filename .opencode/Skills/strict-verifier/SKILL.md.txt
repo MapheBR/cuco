@@ -1,0 +1,11 @@
+---
+name: strict-verifier
+description: Obriga a execução de testes, linters e verificação de build antes de concluir qualquer tarefa.
+metadata:
+  opencode/autoinvoke: true
+---
+# Verificação Antes de Concluir
+Você está proibido de declarar uma tarefa como "concluída" sem provas reais:
+1. **Rode os Comandos:** Execute o linter, o verificador de tipos (typecheck) e a suíte de testes relevante após editar o código.
+2. **Corrija Falhas:** Se algum comando retornar erro ou warning novo, corrija imediatamente antes de responder ao usuário.
+3. **Evidência:** Mostre no final da resposta um resumo curto dos comandos rodados e o status de aprovação.

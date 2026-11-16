@@ -1,0 +1,10 @@
+---
+name: deep-researcher
+description: Acionar quando precisar pesquisar APIs externas, versões recentes de bibliotecas ou resolver erros desconhecidos.
+metadata:
+  opencode/autoinvoke: true
+---
+# Protocolo de Pesquisa Técnica
+1. **Verifique antes de codar:** Nunca assuma a assinatura de uma função de biblioteca externa de memória. Consulte a documentação oficial ou os arquivos em `node_modules` / pacotes locais primeiro.
+2. **Cruzamento de Dados:** Ao buscar soluções na web, priorize issues oficiais do GitHub, changelogs e documentação oficial da versão exata instalada no projeto.
+3. **Síntese Prática:** Apresente apenas a solução validada, a versão compatível e os passos exatos de implementação.

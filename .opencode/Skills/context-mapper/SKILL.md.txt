@@ -1,0 +1,9 @@
+---
+name: context-mapper
+description: Mapeia a arquitetura, dependências e impacto entre arquivos antes de grandes alterações.
+---
+# Mapeamento de Contexto
+Antes de alterar qualquer arquivo central ou esquema de banco de dados:
+1. **Rastreio de Impacto:** Liste todos os arquivos que importam ou dependem do módulo que será alterado.
+2. **Mapa de Fluxo:** Desenhe um diagrama ASCII simples mostrando como o dado entra, é processado e sai.
+3. **Atualização de Memória:** Sempre que descobrir uma regra de negócio oculta ou padrão importante do repositório, sugira adicioná-la ao arquivo `AGENTS.md` na raiz.

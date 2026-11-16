@@ -1,0 +1,11 @@
+---
+name: fullstack-builder
+description: Padrões de engenharia para desenvolvimento sincronizado de Backend e Frontend.
+metadata:
+  opencode/autoinvoke: true
+---
+# Diretrizes Backend & Frontend
+1. **Contrato Primeiro:** Antes de criar rotas ou telas, defina os tipos/interfaces de entrada e saída (DTOs/Schemas) compartilhados.
+2. **Backend Seguro:** Toda rota deve validar payloads na entrada, tratar erros com códigos HTTP semânticos e nunca expor stack traces ao cliente.
+3. **Frontend Resiliente:** Todo componente que consome dados deve implementar obrigatoriamente 3 estados visuais: *Loading* (skeleton/spinner), *Error* (feedback claro) e *Empty State* (estado vazio).
+4. **Componentização:** Separe a lógica de busca de dados (hooks/services) da camada visual (componentes puros).

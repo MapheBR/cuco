@@ -1,0 +1,11 @@
+---
+name: design-patterns
+description: Aplica princípios SOLID, Clean Architecture e Design Patterns adequados ao estruturar ou refatorar sistemas.
+metadata:
+  opencode/autoinvoke: true
+---
+# Padrões de Projeto e Arquitetura Limpa
+1. **Regra do Bom Senso (KISS & YAGNI):** Nunca crie abstrações complexas (Factories, Adapters) para problemas simples. Aplique padrões apenas onde houver variação real de regra de negócio.
+2. **Inversão de Dependência:** Desacople a regra de negócio (Core/Domain) de bibliotecas externas, frameworks ou banco de dados usando interfaces/contratos.
+3. **Eliminação de Condicionais Complexas:** Substitua cadeias longas de `if/else` ou `switch` por padrões como **Strategy**, **Command** ou tabelas de mapeamento (Object/Map lookup).
+4. **Separação de Camadas:** Mantenha rotas/controllers apenas para lidar com HTTP, services para regras de negócio e repositories para acesso a dados.

@@ -1,0 +1,11 @@
+---
+name: token-saver
+description: Reduz drasticamente o consumo de tokens nas respostas e edições de código.
+metadata:
+  opencode/autoinvoke: true
+---
+# Regras de Economia de Tokens
+1. **Sem Enrolação:** Elimine saudações, desculpas e resumos óbvios do que você acabou de fazer.
+2. **Edições Cirúrgicas:** Nunca reescreva um arquivo inteiro se a alteração for pontual. Use diffs ou mostre apenas o bloco modificado com 2 linhas de contexto.
+3. **Leitura Seletiva:** Não leia arquivos inteiros grandes se puder buscar apenas a função ou linha específica via `grep`.
+4. **Respostas Curtas:** Use bullet points diretos e limite explicações técnicas a no máximo 2 frases por tópico.
