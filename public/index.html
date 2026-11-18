@@ -1,0 +1,140 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="description" content="Cuco — controle de escala de trabalho, simples e confiável.">
+  <title>Cuco · Controle de escalas</title>
+  <link rel="icon" href="/assets/logo-claro.png?v=14" type="image/png">
+  <link rel="apple-touch-icon" href="/assets/logo-claro.png?v=14">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Nunito:wght@400;600;700;800;900&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="/css/theme.css?v=14">
+  <link rel="stylesheet" href="/css/layout.css?v=14">
+  <link rel="stylesheet" href="/css/components.css?v=14">
+  <link rel="stylesheet" href="/css/animations.css?v=14">
+</head>
+<body>
+  <!-- TELA DE CARREGAMENTO -->
+  <div class="splash" id="splash">
+    <div class="splash-glow"></div>
+    <div class="splash-content">
+      <div class="splash-mascot" id="splash-mascot" aria-hidden="true"></div>
+      <img class="splash-logo-img" src="/assets/logo-escuro.png?v=14" alt="Cuco">
+      <p class="splash-tagline">Organizando suas escalas...</p>
+      <div class="splash-progress"><span id="splash-bar"></span></div>
+      <p class="splash-step" id="splash-step">Conectando ao banco local</p>
+    </div>
+  </div>
+
+  <!-- TELA DE LOGIN -->
+  <div class="login-screen hidden" id="login-screen">
+    <div class="login-blob login-blob-a"></div>
+    <div class="login-blob login-blob-b"></div>
+    <div class="login-card">
+      <div class="login-brand">
+        <div class="login-mascot" id="login-mascot" aria-hidden="true"></div>
+        <img class="login-logo-img" src="/assets/logo-claro.png?v=14" alt="Cuco">
+      </div>
+      <h2>Bem-vindo de volta!</h2>
+      <p class="login-subtitle">Entre para acessar o painel de escalas.</p>
+      <form id="login-form" class="login-form">
+        <div class="field">
+          <label for="login-user">Usuário</label>
+          <div class="input-icon">
+            <svg class="field-icon" viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="8" r="4"/><path d="M4 21c0-4 3.6-7 8-7s8 3 8 7"/></svg>
+            <input id="login-user" name="login" autocomplete="username" placeholder="seu usuario" required>
+          </div>
+        </div>
+        <div class="field">
+          <label for="login-pass">Senha</label>
+          <div class="input-icon">
+            <svg class="field-icon" viewBox="0 0 24 24" aria-hidden="true"><rect x="4" y="10" width="16" height="11" rx="2"/><path d="M8 10V7a4 4 0 0 1 8 0v3"/></svg>
+            <input id="login-pass" name="password" type="password" autocomplete="current-password" placeholder="sua senha" required>
+            <button type="button" class="password-toggle" id="password-toggle" aria-label="Mostrar senha">
+              <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M2 12s3.6-6 10-6 10 6 10 6-3.6 6-10 6-10-6-10-6Z"/><circle cx="12" cy="12" r="3"/></svg>
+            </button>
+          </div>
+        </div>
+        <label class="login-remember"><input type="checkbox" id="login-remember" checked> Manter conectado</label>
+        <div class="login-error hidden" id="login-error"></div>
+        <button class="btn btn-primary btn-block login-button" id="login-button" type="submit">
+          <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M5 12h14M13 6l6 6-6 6"/></svg> Entrar no painel
+        </button>
+      </form>
+
+    </div>
+  </div>
+
+  <!-- APLICAÇÃO -->
+  <div class="layout hidden" id="app">
+    <aside class="sidebar">
+      <div class="brand">
+        <span class="brand-mark" aria-hidden="true"><img src="/assets/mascote_passarinho.svg" alt=""></span>
+        <div class="brand-text"><img class="brand-logo-img" src="/assets/logo-escuro.png?v=14" alt="Cuco"></div>
+      </div>
+
+      <nav class="nav" id="nav" aria-label="Navegação principal">
+        <button class="nav-item active" data-view="dashboard" type="button">
+          <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M3 11 12 4l9 7v9a1 1 0 0 1-1 1h-5v-7H9v7H4a1 1 0 0 1-1-1v-9Z"/></svg>
+          Visão geral
+        </button>
+        <button class="nav-item" data-view="shifts" type="button">
+          <svg viewBox="0 0 24 24" aria-hidden="true"><rect x="3" y="5" width="18" height="16" rx="2"/><path d="M8 3v4M16 3v4M3 10h18M8 14h3M8 17h7"/></svg>
+          Escalas
+        </button>
+        <button class="nav-item" data-view="team" type="button">
+          <svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="9" cy="8" r="3.5"/><path d="M3 20c0-3.3 2.7-6 6-6s6 2.7 6 6M16 5.2a3.5 3.5 0 0 1 0 5.6M18 14.5c1.8.8 3 2.8 3 5.5"/></svg>
+          Equipe
+        </button>
+        <button class="nav-item hidden" data-view="users" id="nav-users" type="button">
+          <svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="8" r="4"/><path d="M4 21c0-4 3.6-7 8-7s8 3 8 7M12 2v2M20 6l-1.5 1.5M4 6l1.5 1.5"/></svg>
+          Usuários
+        </button>
+        <button class="nav-item hidden" data-view="compliance" id="nav-compliance" type="button">
+          <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 3 4 6v5c0 5 3.4 8.6 8 10 4.6-1.4 8-5 8-10V6l-8-3Z"/><path d="M12 8v5M12 16h.01"/></svg>
+          Conformidade
+        </button>
+        <button class="nav-item hidden" data-view="audit" id="nav-audit" type="button">
+          <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 3 4 6v5c0 5 3.4 8.6 8 10 4.6-1.4 8-5 8-10V6l-8-3Z"/><path d="M9 12l2 2 4-4"/></svg>
+          Auditoria
+        </button>
+        <button class="nav-item" data-view="settings" type="button">
+          <svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="3"/><path d="M12 2v3M12 19v3M4.2 4.2l2.1 2.1M17.7 17.7l2.1 2.1M2 12h3M19 12h3M4.2 19.8l2.1-2.1M17.7 6.3l2.1-2.1"/></svg>
+          Configurações
+        </button>
+      </nav>
+
+    </aside>
+
+    <div class="content">
+      <header class="topbar">
+        <div>
+          <p class="eyebrow" id="eyebrow">PAINEL</p>
+          <h1 id="page-title">Visão geral</h1>
+        </div>
+        <div class="topbar-actions">
+          <button class="icon-btn motion-toggle" id="motion-toggle" type="button" title="Pausar animações" aria-label="Pausar animações">
+            <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M9 5v14M15 5v14"/></svg>
+          </button>
+          <div class="user-chip" id="user-chip" title="Editar meu perfil" role="button" tabindex="0">
+            <span class="user-avatar" id="user-avatar">AD</span>
+            <span class="user-meta"><strong id="user-name">Administrador</strong><small id="user-role">admin</small></span>
+            <svg class="chip-chevron" viewBox="0 0 24 24" aria-hidden="true"><path d="m6 9 6 6 6-6"/></svg>
+            <span class="chip-divider"></span>
+            <button class="icon-btn" id="logout-button" type="button" title="Sair" aria-label="Sair">
+              <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M10 4H6a2 2 0 0 0-2 2v12a2 2 0 0 0 2 2h4M14 8l4 4-4 4M18 12H9"/></svg>
+            </button>
+          </div>
+        </div>
+      </header>
+      <main id="view" aria-live="polite"></main>
+    </div>
+  </div>
+
+  <div id="modal-root"></div>
+  <div id="toast-root" class="toast-root" aria-live="polite"></div>
+  <script type="module" src="/js/app.js?v=14"></script>
+</body>
+</html>
