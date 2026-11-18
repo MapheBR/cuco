@@ -235,8 +235,8 @@ tbody tr:last-child td { border-bottom: 0; }
   position: absolute; width: 480px; height: 480px; border-radius: 50%;
   background: rgba(255,255,255,.08); filter: blur(10px); animation: glow-pulse 2.6s ease-in-out infinite;
 }
-.splash-content { position: relative; text-align: center; padding: 24px; }
-.splash-mascot { width: 108px; height: 108px; filter: drop-shadow(0 12px 18px rgba(0,0,0,.22)); animation: mascot-float 2.2s ease-in-out infinite; }
+.splash-content { position: relative; display: flex; flex-direction: column; align-items: center; text-align: center; padding: 24px; }
+.splash-mascot { width: 108px; height: 108px; margin: 0 auto; filter: drop-shadow(0 12px 18px rgba(0,0,0,.22)); animation: mascot-float 2.2s ease-in-out infinite; }
 .splash-logo { font-family: var(--font-title); font-size: 46px; font-weight: 900; letter-spacing: -2px; line-height: 1; }
 .splash-logo span, .login-brand h1 span { color: var(--accent); }
 .splash-tagline { margin-top: 6px; font-size: 13px; opacity: .85; }

@@ -1,4 +1,4 @@
-import { api } from './api.js?v=22';
+import { api } from './api.js?v=24';
 
 export const store = {
   view: 'dashboard',

@@ -1,6 +1,6 @@
-import { store } from '../store.js?v=22';
-import { api } from '../api.js?v=22';
-import { esc, emptyState, toast, modal, closeModal } from '../ui.js?v=22';
+import { store } from '../store.js?v=24';
+import { api } from '../api.js?v=24';
+import { esc, emptyState, toast, modal, closeModal } from '../ui.js?v=24';
 
 const LABEL = { aberto: 'Aberto', em_andamento: 'Em andamento', fechado: 'Fechado' };
 const BADGE = { aberto: 'planejado', em_andamento: 'troca', fechado: 'confirmado' };

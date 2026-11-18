@@ -1,22 +1,22 @@
-import { store, loadMembers, loadUsers, loadAudit, loadCompliance, loadSwaps, loadNotifications, loadMyShifts, loadSummary, loadSettings, loadShifts, loadFlow, loadInvitations } from './store.js?v=22';
-import { api } from './api.js?v=22';
-import { mascotSvg, initMascotInteractions } from './mascot.js?v=22';
-import { loadingState, errorState, toast, confetti, modal, closeModal, photoField, bindPhotoField, confirmDelete, esc } from './ui.js?v=22';
-import { mountLogin } from './views/login.js?v=22';
-import * as dashboard from './views/dashboard.js?v=22';
-import * as shifts from './views/shifts.js?v=22';
-import * as team from './views/team.js?v=22';
-import * as users from './views/users.js?v=22';
-import * as audit from './views/audit.js?v=22';
-import * as compliance from './views/compliance.js?v=22';
-import * as settings from './views/settings.js?v=22';
-import * as privacy from './views/privacy.js?v=22';
-import * as swaps from './views/swaps.js?v=22';
-import * as organization from './views/organization.js?v=22';
-import * as tasks from './views/tasks.js?v=22';
-import * as tickets from './views/tickets.js?v=22';
-import * as invitations from './views/invitations.js?v=22';
-import * as map from './views/map.js?v=22';
+import { store, loadMembers, loadUsers, loadAudit, loadCompliance, loadSwaps, loadNotifications, loadMyShifts, loadSummary, loadSettings, loadShifts, loadFlow, loadInvitations } from './store.js?v=24';
+import { api } from './api.js?v=24';
+import { mascotSvg, initMascotInteractions } from './mascot.js?v=24';
+import { loadingState, errorState, toast, confetti, modal, closeModal, photoField, bindPhotoField, confirmDelete, esc } from './ui.js?v=24';
+import { mountLogin } from './views/login.js?v=24';
+import * as dashboard from './views/dashboard.js?v=24';
+import * as shifts from './views/shifts.js?v=24';
+import * as team from './views/team.js?v=24';
+import * as users from './views/users.js?v=24';
+import * as audit from './views/audit.js?v=24';
+import * as compliance from './views/compliance.js?v=24';
+import * as settings from './views/settings.js?v=24';
+import * as privacy from './views/privacy.js?v=24';
+import * as swaps from './views/swaps.js?v=24';
+import * as organization from './views/organization.js?v=24';
+import * as tasks from './views/tasks.js?v=24';
+import * as tickets from './views/tickets.js?v=24';
+import * as invitations from './views/invitations.js?v=24';
+import * as map from './views/map.js?v=24';
 
 const VIEWS = {
   dashboard: { module: dashboard, title: 'Visão geral', eyebrow: 'PAINEL' },
@@ -35,7 +35,10 @@ const VIEWS = {
   map: { module: map, title: 'Mapa', eyebrow: 'LOCAL' },
 };
 
-if ('serviceWorker' in navigator) navigator.serviceWorker.register('/sw.js').catch(() => {});
+if ('serviceWorker' in navigator) {
+  navigator.serviceWorker.register('/sw.js', { updateViaCache: 'none' }).catch(() => {});
+  navigator.serviceWorker.ready.then((registration) => registration.update()).catch(() => {});
+}
 
 const viewRoot = document.getElementById('view');
 const splash = document.getElementById('splash');

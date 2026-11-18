@@ -1,6 +1,6 @@
-import { store } from '../store.js?v=22';
-import { api } from '../api.js?v=22';
-import { esc, toast, emptyState } from '../ui.js?v=22';
+import { store } from '../store.js?v=24';
+import { api } from '../api.js?v=24';
+import { esc, toast, emptyState } from '../ui.js?v=24';
 
 const isAdmin = () => store.user?.role === 'admin';
 
