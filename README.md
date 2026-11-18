@@ -57,7 +57,7 @@ Tabelas: `members`, `shifts`, `settings`, `users`, `activity_log`. Senhas com ha
 
 Respostas HTTP com `Content-Security-Policy`, `X-Content-Type-Options`, `X-Frame-Options` e `Referrer-Policy`. A auditoria registra IP e user-agent.
 
-Comandos úteis: `npm test` (smoke tests de health, RBAC, CSRF, upload e conformidade) e `npm run backup` (cópia segura com `VACUUM INTO`, mantendo os 7 backups mais recentes em `backups/`).
+Comandos úteis: `npm run check` (sintaxe de todos os `.js`), `npm test` (7 testes de health, RBAC, CSRF, revogação de sessão, upload e conformidade) e `npm run backup` (`VACUUM INTO`, mantendo os 7 backups mais recentes em `backups/`). O GitHub Actions executa `check` e `test` a cada push em `main`.
 
 ## API
 

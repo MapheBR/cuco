@@ -1,5 +1,5 @@
-import { store } from '../store.js?v=14';
-import { esc, emptyState, toast } from '../ui.js?v=14';
+import { store } from '../store.js?v=15';
+import { esc, emptyState, toast } from '../ui.js?v=15';
 
 let severityFilter = 'all';
 
@@ -7,6 +7,7 @@ const RULES = {
   'jornada-semanal': 'Jornada semanal',
   'descanso-semanal': 'Repouso semanal',
   interjornada: 'Descanso entre turnos',
+  sobreposicao: 'Turnos sobrepostos',
   'horas-extras': 'Horas extras',
   intervalo: 'Intervalo intrajornada',
 };

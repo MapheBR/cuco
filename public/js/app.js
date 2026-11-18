@@ -1,15 +1,15 @@
-import { store, loadMembers, loadUsers, loadAudit, loadCompliance, loadMyShifts, loadSummary, loadSettings, loadShifts } from './store.js?v=14';
-import { api } from './api.js?v=14';
-import { mascotSvg, mascotMood, initMascotInteractions } from './mascot.js?v=14';
-import { loadingState, errorState, toast, confetti, modal, closeModal, photoField, bindPhotoField } from './ui.js?v=14';
-import { mountLogin } from './views/login.js?v=14';
-import * as dashboard from './views/dashboard.js?v=14';
-import * as shifts from './views/shifts.js?v=14';
-import * as team from './views/team.js?v=14';
-import * as users from './views/users.js?v=14';
-import * as audit from './views/audit.js?v=14';
-import * as compliance from './views/compliance.js?v=14';
-import * as settings from './views/settings.js?v=14';
+import { store, loadMembers, loadUsers, loadAudit, loadCompliance, loadMyShifts, loadSummary, loadSettings, loadShifts } from './store.js?v=15';
+import { api } from './api.js?v=15';
+import { mascotSvg, mascotMood, initMascotInteractions } from './mascot.js?v=15';
+import { loadingState, errorState, toast, confetti, modal, closeModal, photoField, bindPhotoField } from './ui.js?v=15';
+import { mountLogin } from './views/login.js?v=15';
+import * as dashboard from './views/dashboard.js?v=15';
+import * as shifts from './views/shifts.js?v=15';
+import * as team from './views/team.js?v=15';
+import * as users from './views/users.js?v=15';
+import * as audit from './views/audit.js?v=15';
+import * as compliance from './views/compliance.js?v=15';
+import * as settings from './views/settings.js?v=15';
 
 const VIEWS = {
   dashboard: { module: dashboard, title: 'Visão geral', eyebrow: 'PAINEL' },

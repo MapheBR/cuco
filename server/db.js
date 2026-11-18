@@ -48,6 +48,7 @@ db.exec(`
     active INTEGER NOT NULL DEFAULT 1,
     photo TEXT NOT NULL DEFAULT '',
     member_id INTEGER REFERENCES members(id) ON DELETE SET NULL,
+    token_version INTEGER NOT NULL DEFAULT 0,
     created_at TEXT NOT NULL DEFAULT (datetime('now'))
   );
 
@@ -72,6 +73,7 @@ function migrate() {
   if (!memberColumns.includes('photo')) db.exec("ALTER TABLE members ADD COLUMN photo TEXT NOT NULL DEFAULT ''");
   const userColumns = db.prepare('PRAGMA table_info(users)').all().map((column) => column.name);
   if (!userColumns.includes('member_id')) db.exec('ALTER TABLE users ADD COLUMN member_id INTEGER REFERENCES members(id) ON DELETE SET NULL');
+  if (!userColumns.includes('token_version')) db.exec("ALTER TABLE users ADD COLUMN token_version INTEGER NOT NULL DEFAULT 0");
   const logColumns = db.prepare('PRAGMA table_info(activity_log)').all().map((column) => column.name);
   if (!logColumns.includes('ip')) db.exec("ALTER TABLE activity_log ADD COLUMN ip TEXT NOT NULL DEFAULT ''");
   if (!logColumns.includes('user_agent')) db.exec("ALTER TABLE activity_log ADD COLUMN user_agent TEXT NOT NULL DEFAULT ''");

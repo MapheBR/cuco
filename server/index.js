@@ -33,7 +33,12 @@ const server = http.createServer(async (req, res) => {
     return sendJson(res, 405, { error: 'Método não permitido' });
   }
 
-  let relative = decodeURIComponent(url.pathname);
+  let relative;
+  try {
+    relative = decodeURIComponent(url.pathname);
+  } catch {
+    return sendJson(res, 400, { error: 'Caminho inválido' });
+  }
   if (relative === '/' || relative === '') relative = '/index.html';
   const filePath = path.join(PUBLIC_DIR, path.normalize(relative).replace(/^([/\\])+/, ''));
   if (!filePath.startsWith(PUBLIC_DIR + path.sep) && filePath !== path.join(PUBLIC_DIR, 'index.html')) {

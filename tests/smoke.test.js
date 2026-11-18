@@ -101,6 +101,17 @@ test('smoke Cuco', async (t) => {
     assert.equal(response.status, 400);
   });
 
+  await t.test('sessão é revogada no logout e caminho inválido não derruba o servidor', async () => {
+    const admin = await login('admin', 'admin123');
+    assert.equal((await fetch(`${BASE}/api/me`, { headers: { Cookie: admin.cookies } })).status, 200);
+    await fetch(`${BASE}/api/logout`, {
+      method: 'POST', headers: { Cookie: admin.cookies, 'X-CSRF-Token': admin.payload.data.csrf },
+    });
+    assert.equal((await fetch(`${BASE}/api/me`, { headers: { Cookie: admin.cookies } })).status, 401);
+    assert.equal((await fetch(`${BASE}/%ZZ`)).status, 400);
+    assert.equal((await fetch(`${BASE}/api/health`)).status, 200);
+  });
+
   await t.test('validador de escala responde com limites', async () => {
     const admin = await login('admin', 'admin123');
     const response = await fetch(`${BASE}/api/compliance`, { headers: { Cookie: admin.cookies } });

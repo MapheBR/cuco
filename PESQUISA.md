@@ -122,3 +122,44 @@ Proposta: tela **"Validador de escala"** com severidades (bloqueante / atenção
 ## 7. Nota sobre a logo
 
 A logo amarela em PNG foi adicionada em: favicon/apple-touch icon, splash, login e sidebar. Como o amarelo tem contraste baixo sobre branco, ele funciona como marca (logotipo é isento de contraste mínimo pela WCAG) e como acento em superfícies escuras — não deve ser usado como texto corrido em fundo claro.
+
+## 8. Avaliação com skill de avaliador de projeto (`architect`)
+
+**Skill encontrada:** `architect` — avaliador multidisciplinar de ideias e projetos (JuanMarchetto/agent-skills, MIT, v1.0.0). Faz detecção de modo (ideia vs. projeto existente), despacha 3–6 avaliadores especializados em paralelo (mercado, técnico, risco, impacto, recursos, inovação) e sintetiza com Opportunity Score, Value Matrix, Project Health Score e Course Corrections.
+
+**Vale a pena?** **Sim, como avaliação periódica (mensal/trimestral), não como verificação de cada commit.** O método é bom porque obriga a pontuar com evidência, marca `insufficient data` em vez de inventar números e separa valor de produto de popularidade. O custo é alto (vários avaliadores, contexto `data/context.md` precisa ser preenchido) e as skills locais `idea-validator`/`strict-verifier` já cobrem parte do terreno. Recomendo adotar o **rubric + Health Score**, não o pipeline completo no dia a dia.
+
+### Value Matrix (aplicada ao Cuco em 18/11/2026)
+
+| Dimensão | Nota | Evidência principal |
+| --- | --- | --- |
+| Comercial | 5/10 | Cliente identificável (PMEs em turnos), demanda real pela EC 141/2026; mercado competitivo com planos gratuitos (Tá Escalado!, escala.app, Homebase). Modelo de receita e tração: `insufficient data`. |
+| Técnica | 8/10 | Node 22 nativo, zero dependências, módulos separados, migrações, CSRF/RBAC/testes. Desconto: `node:sqlite` experimental e falhas corrigidas nesta rodada. |
+| Risco (maior = menos risco) | 6/10 | Controles centrais existem; faltava LGPD aplicada e havia DoS por `decodeURIComponent`. |
+| Inovação | 7/10 | Validador CLT/EC 141 preventivo + soberania de dados local; o resto é catch-up de mercado. Mascote/animação não é diferenciação. |
+| Eficiência de recursos | 8/10 | Custo quase zero, solo dev, valor em semanas; próximos itens (PWA/push) exigem semanas e infra. |
+
+**Opportunity Score: 6,8/10 — Moderate/Strong (CONDITIONAL GO).**
+**Project Health: 7/10** (arquitetura limpa, 7 testes, backup; sem CI/linter/cobertura até esta rodada).
+
+### Correções aplicadas a partir da avaliação
+1. CSRF agora exige **header** (removido o fallback que aceitava o próprio cookie) e valida `Origin`.
+2. Sessão com `token_version`: logout revoga de verdade; rate limit com limpeza de entradas expiradas e teto de 5.000.
+3. `decodeURIComponent` protegido (URI malformada retorna 400 sem derrubar o processo) — `server/index.js`.
+4. Validador: janela rolling de 7 dias (máx. 5 trabalhados), vigência exata 16/12/2026 e 16/12/2027, detecção de sobreposição de turnos.
+5. `x-forwarded-for` só é confiado com `TRUST_PROXY=1`.
+6. CI no GitHub Actions (`npm run check` + `npm test`) e script de checagem de sintaxe.
+7. Testes ampliados para 6 subtestes (revogação de sessão e caminho inválido incluídos).
+
+### Conflito resolvido
+Mercado diz que "conformidade" não é exclusiva (concorrente brasileiro já bloqueia por 11 h e limites); inovação diz que é o principal diferencial. Resolução: o validador só sustenta diferenciação se for **preventivo, configurável por convenção e auditável como evidência** — não apenas um relatório depois do fato.
+
+### Course Corrections: PERSEVERE com ajustes
+Não pivotar. Melhorias restantes, em ordem:
+1. **Camada LGPD antes de dados reais**: aviso de privacidade ao empregado, base legal art. 7º, II/V registrada, tabela de temporalidade, exportação/eliminação do titular (art. 18) e plano de comunicação de incidente em 3 dias úteis. Único item classificado como **crítico**.
+2. **Conformidade preventiva**: validar no ato de salvar/publicar, com override justificado e auditado, sempre como "apontamento", nunca parecer jurídico; revisar matriz com advogado/sindicato.
+3. **Troca de turnos + disponibilidade com aprovação** (3–5 dias) e **notificações in-app primeiro** — ataca adoção, que é o maior risco de negócio.
+4. **PWA offline só para leitura** (6–8 dias) depois das notificações; service worker é pré-requisito de Web Push.
+5. **Regras configuráveis por convenção/categoria** e dossiê de conformidade em PDF com hash — transforma o validador em prova defensável.
+6. **Monetização**: freemium por empresa/unidade até ~10 funcionários, cobrança via Pix recorrente, faixa R$ 50–130/mês; cobrar por recurso (templates, trocas, notificações, multunidade), não por funcionário.
+7. **Engenharia**: linter + cobertura no CI, fixar versão do Node e planejar saída do `node:sqlite` experimental; mover uploads fora do webroot com handler autenticado.

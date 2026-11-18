@@ -39,8 +39,8 @@ function verifyPassword(password, stored) {
   }
 }
 
-function signToken(userId) {
-  const payload = Buffer.from(JSON.stringify({ id: userId, exp: Date.now() + MAX_AGE * 1000 })).toString('base64url');
+function signToken(userId, version = 0) {
+  const payload = Buffer.from(JSON.stringify({ id: userId, version, exp: Date.now() + MAX_AGE * 1000 })).toString('base64url');
   const signature = crypto.createHmac('sha256', secret).update(payload).digest('base64url');
   return `${payload}.${signature}`;
 }
@@ -53,7 +53,7 @@ function verifyToken(token) {
     if (signature.length !== expected.length || !crypto.timingSafeEqual(Buffer.from(signature), Buffer.from(expected))) return null;
     const data = JSON.parse(Buffer.from(payload, 'base64url').toString('utf8'));
     if (!Number.isInteger(data.id) || data.exp < Date.now()) return null;
-    return data.id;
+    return data;
   } catch {
     return null;
   }
@@ -74,9 +74,11 @@ function publicUser(user) {
 
 function currentUser(req) {
   const db = require('./db');
-  const id = verifyToken(parseCookies(req.headers.cookie)[COOKIE]);
-  if (!id) return null;
-  return db.prepare('SELECT * FROM users WHERE id = ? AND active = 1').get(id);
+  const session = verifyToken(parseCookies(req.headers.cookie)[COOKIE]);
+  if (!session) return null;
+  const user = db.prepare('SELECT * FROM users WHERE id = ? AND active = 1').get(session.id);
+  if (!user || (user.token_version || 0) !== (session.version || 0)) return null;
+  return user;
 }
 
 function requireUser(req) {
@@ -96,7 +98,7 @@ const secureFlag = () => (process.env.SECURE_COOKIES === '1' || process.env.NODE
 
 function sessionCookie(user, remember = true) {
   const age = remember ? `; Max-Age=${MAX_AGE}` : '';
-  return `${COOKIE}=${signToken(user.id)}; HttpOnly; SameSite=Lax; Path=/${age}${secureFlag()}`;
+  return `${COOKIE}=${signToken(user.id, user.token_version || 0)}; HttpOnly; SameSite=Lax; Path=/${age}${secureFlag()}`;
 }
 
 function createCsrf(userId) {

@@ -17,6 +17,21 @@ const UPLOAD_SIGNATURES = {
   'image/webp': (buffer) => buffer.subarray(0, 4).toString('ascii') === 'RIFF' && buffer.subarray(8, 12).toString('ascii') === 'WEBP',
 };
 const loginAttempts = new Map();
+const ATTEMPT_WINDOW = 15 * 60 * 1000;
+
+function clientIp(req) {
+  if (process.env.TRUST_PROXY === '1') {
+    return String(req.headers['x-forwarded-for'] || '').split(',')[0].trim();
+  }
+  return String(req.socket.remoteAddress || '').replace('::ffff:', '');
+}
+
+function pruneAttempts(now) {
+  for (const [key, value] of loginAttempts) {
+    if (now - value.started > ATTEMPT_WINDOW) loginAttempts.delete(key);
+  }
+  if (loginAttempts.size > 5000) loginAttempts.clear();
+}
 
 function validPhoto(value) {
   if (value === '' || value === null || value === undefined) return '';
@@ -181,9 +196,8 @@ function getSummary(month) {
 
 function getCompliance(month) {
   const range = monthRange(month) || monthRange(currentMonth());
-  const [year, monthNumber] = range.from.split('-').map(Number);
-  const weeklyLimit = (year > 2027 || (year === 2027 && monthNumber >= 12)) ? 40
-    : (year > 2026 || (year === 2026 && monthNumber >= 12)) ? 42 : 44;
+  const limitFor = (date) => (date >= '2027-12-16' ? 40 : date >= '2026-12-16' ? 42 : 44);
+  const weeklyLimit = limitFor(range.from);
   const issues = [];
   const members = db.prepare('SELECT id, name FROM members ORDER BY name').all();
 
@@ -193,17 +207,21 @@ function getCompliance(month) {
       WHERE member_id = ? AND date BETWEEN ? AND ? ORDER BY date ASC, start_time ASC
     `).all(member.id, range.from, range.to);
     const weekly = new Map();
+    const workedDates = new Set();
     let run = [];
     let maxRun = 0;
     let previous = null;
 
     for (const shift of rows) {
       const day = new Date(`${shift.date}T12:00:00`);
+      workedDates.add(shift.date);
       const hours = hoursOf(shift.start_time, shift.end_time);
       const monday = new Date(day);
       monday.setDate(day.getDate() - ((day.getDay() + 6) % 7));
       const weekKey = `${monday.getFullYear()}-${String(monday.getMonth() + 1).padStart(2, '0')}-${String(monday.getDate()).padStart(2, '0')}`;
-      weekly.set(weekKey, (weekly.get(weekKey) || 0) + hours);
+      const bucket = weekly.get(weekKey) || { hours: 0, limit: limitFor(weekKey) };
+      bucket.hours += hours;
+      weekly.set(weekKey, bucket);
 
       if (hours > 10) issues.push({
         rule: 'horas-extras', severity: 'warning', member: member.name, date: shift.date,
@@ -217,7 +235,11 @@ function getCompliance(month) {
         const endsAt = new Date(`${previous.date}T${previous.end_time}:00`);
         const startsAt = new Date(`${shift.date}T${shift.start_time}:00`);
         const gap = (startsAt - endsAt) / 3600000;
-        if (gap > 0 && gap < 11) issues.push({
+        if (gap <= 0) issues.push({
+          rule: 'sobreposicao', severity: 'critical', member: member.name, date: shift.date,
+          message: `Turno sobreposto ao anterior (${previous.title})`,
+        });
+        else if (gap < 11) issues.push({
           rule: 'interjornada', severity: 'critical', member: member.name, date: shift.date,
           message: `Apenas ${gap.toFixed(1)}h entre turnos; o mínimo é 11h`,
         });
@@ -233,10 +255,26 @@ function getCompliance(month) {
       rule: 'descanso-semanal', severity: 'critical', member: member.name, date: range.from,
       message: `${maxRun} dias consecutivos escalados; a regra geral prevê 2 dias de repouso semanal`,
     });
-    for (const [week, hours] of weekly) {
-      if (hours > weeklyLimit) issues.push({
+    for (const date of [...workedDates].sort()) {
+      const start = new Date(`${date}T12:00:00`);
+      let worked = 0;
+      for (let offset = 0; offset < 7; offset += 1) {
+        const day = new Date(start);
+        day.setDate(start.getDate() - offset);
+        if (workedDates.has(`${day.getFullYear()}-${String(day.getMonth() + 1).padStart(2, '0')}-${String(day.getDate()).padStart(2, '0')}`)) worked += 1;
+      }
+      if (worked > 5) {
+        issues.push({
+          rule: 'descanso-semanal', severity: 'critical', member: member.name, date,
+          message: `${worked} dias trabalhados em 7; devem ser no máximo 5 (2 repousos semanais)`,
+        });
+        break;
+      }
+    }
+    for (const [week, bucket] of weekly) {
+      if (bucket.hours > bucket.limit) issues.push({
         rule: 'jornada-semanal', severity: 'critical', member: member.name, date: week,
-        message: `${Math.round(hours)}h na semana iniciada em ${week.slice(8, 10)}/${week.slice(5, 7)}; limite de ${weeklyLimit}h`,
+        message: `${Math.round(bucket.hours)}h na semana iniciada em ${week.slice(8, 10)}/${week.slice(5, 7)}; limite de ${bucket.limit}h`,
       });
     }
   }
@@ -266,7 +304,7 @@ function saveUpload(body) {
 function logActivity(req, action, detail = '') {
   const user = auth.currentUser(req);
   if (!user) return;
-  const ip = String(req.headers['x-forwarded-for'] || req.socket.remoteAddress || '').split(',')[0].trim().slice(0, 60);
+  const ip = clientIp(req).slice(0, 60);
   const agent = asText(req.headers['user-agent'], 160);
   db.prepare('INSERT INTO activity_log (user_id, user_name, action, detail, ip, user_agent) VALUES (?, ?, ?, ?, ?, ?)')
     .run(user.id, user.name, action, asText(detail, 300), ip, agent);
@@ -297,15 +335,17 @@ async function handleApi(req, res, url) {
   // --- autenticação ---
   if (route === '/api/login' && method === 'POST') {
     const body = await readJson(req);
+    const now = Date.now();
+    pruneAttempts(now);
     const login = asText(body.login, 40).toLowerCase();
-    const key = `${req.socket.remoteAddress || 'unknown'}:${login}`;
+    const key = `${clientIp(req)}:${login}`;
     const attempt = loginAttempts.get(key);
-    if (attempt && attempt.count >= 5 && Date.now() - attempt.started < 15 * 60 * 1000) {
+    if (attempt && attempt.count >= 5 && now - attempt.started < ATTEMPT_WINDOW) {
       throw fail(429, 'Muitas tentativas. Aguarde alguns minutos.');
     }
     const user = db.prepare('SELECT * FROM users WHERE login = ? AND active = 1').get(login);
     if (!user || !auth.verifyPassword(body.password, user.password_hash)) {
-      const current = attempt && Date.now() - attempt.started < 15 * 60 * 1000 ? attempt : { count: 0, started: Date.now() };
+      const current = attempt && now - attempt.started < ATTEMPT_WINDOW ? attempt : { count: 0, started: now };
       current.count += 1;
       loginAttempts.set(key, current);
       throw fail(401, 'Usuário ou senha incorretos');
@@ -314,13 +354,15 @@ async function handleApi(req, res, url) {
     const csrf = auth.createCsrf(user.id);
     db.prepare('INSERT INTO activity_log (user_id, user_name, action, detail, ip, user_agent) VALUES (?, ?, ?, ?, ?, ?)')
       .run(user.id, user.name, 'login', `Login: ${login}`,
-        String(req.headers['x-forwarded-for'] || req.socket.remoteAddress || '').split(',')[0].trim().slice(0, 60),
+        clientIp(req).slice(0, 60),
         asText(req.headers['user-agent'], 160));
     return sendJson(res, 200,
       { data: { ...auth.publicUser(user), csrf } },
       { 'Set-Cookie': [auth.sessionCookie(user, body.remember !== false), auth.csrfCookie(csrf)] });
   }
   if (route === '/api/logout' && method === 'POST') {
+    const current = auth.currentUser(req);
+    if (current) db.prepare('UPDATE users SET token_version = token_version + 1 WHERE id = ?').run(current.id);
     logActivity(req, 'logout', 'Encerrando sessão');
     return sendJson(res, 200, { ok: true }, { 'Set-Cookie': auth.clearCookie() });
   }
@@ -330,11 +372,10 @@ async function handleApi(req, res, url) {
 
   const user = auth.requireUser(req);
   if (!['GET', 'HEAD', 'OPTIONS'].includes(method)) {
-    const cookieToken = String(req.headers.cookie || '').split(';')
-      .map((part) => part.trim()).find((part) => part.startsWith('cuco_csrf='))?.slice(10);
-    if (!auth.verifyCsrf(req.headers['x-csrf-token'] || cookieToken, user.id)) {
-      throw fail(403, 'Token de segurança inválido');
-    }
+    const origin = req.headers.origin;
+    const host = req.headers.host || '';
+    if (origin && origin !== `http://${host}` && origin !== `https://${host}`) throw fail(403, 'Origem inválida');
+    if (!auth.verifyCsrf(req.headers['x-csrf-token'], user.id)) throw fail(403, 'Token de segurança inválido');
   }
   const employeeAllowed = (route === '/api/upload' && method === 'POST')
     || (route === '/api/me/profile' && method === 'PUT')
