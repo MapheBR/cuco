@@ -37,7 +37,7 @@ async function login(loginName, password) {
 before(async () => {
   server = spawn(process.execPath, ['--no-warnings=ExperimentalWarning', 'server/index.js'], {
     cwd: path.join(__dirname, '..'),
-    env: { ...process.env, PORT: String(PORT), DB_PATH: dbPath },
+    env: { ...process.env, PORT: String(PORT), DB_PATH: dbPath, SEED_DEMO: '1' },
     stdio: 'ignore',
   });
   await waitForServer();

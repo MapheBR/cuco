@@ -5,18 +5,18 @@
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <meta name="description" content="Cuco — controle de escala de trabalho, simples e confiável.">
   <title>Cuco · Controle de escalas</title>
-  <link rel="icon" href="/assets/logo-claro.png?v=17" type="image/png">
-  <link rel="apple-touch-icon" href="/assets/logo-claro.png?v=17">
-  <link rel="manifest" href="/manifest.webmanifest?v=17">
+  <link rel="icon" href="/assets/logo-claro.png?v=18" type="image/png">
+  <link rel="apple-touch-icon" href="/assets/logo-claro.png?v=18">
+  <link rel="manifest" href="/manifest.webmanifest?v=18">
   <meta name="theme-color" content="#1E8A4C">
   <meta name="mobile-web-app-capable" content="yes">
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Nunito:wght@400;600;700;800;900&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
-  <link rel="stylesheet" href="/css/theme.css?v=17">
-  <link rel="stylesheet" href="/css/layout.css?v=17">
-  <link rel="stylesheet" href="/css/components.css?v=17">
-  <link rel="stylesheet" href="/css/animations.css?v=17">
+  <link rel="stylesheet" href="/css/theme.css?v=18">
+  <link rel="stylesheet" href="/css/layout.css?v=18">
+  <link rel="stylesheet" href="/css/components.css?v=18">
+  <link rel="stylesheet" href="/css/animations.css?v=18">
 </head>
 <body>
   <!-- TELA DE CARREGAMENTO -->
@@ -24,7 +24,7 @@
     <div class="splash-glow"></div>
     <div class="splash-content">
       <div class="splash-mascot" id="splash-mascot" aria-hidden="true"></div>
-      <img class="splash-logo-img" src="/assets/logo-escuro.png?v=17" alt="Cuco">
+      <img class="splash-logo-img" src="/assets/logo-escuro.png?v=18" alt="Cuco">
       <p class="splash-tagline">Organizando suas escalas...</p>
       <div class="splash-progress"><span id="splash-bar"></span></div>
       <p class="splash-step" id="splash-step">Conectando ao banco local</p>
@@ -38,7 +38,7 @@
     <div class="login-card">
       <div class="login-brand">
         <div class="login-mascot" id="login-mascot" aria-hidden="true"></div>
-        <img class="login-logo-img" src="/assets/logo-claro.png?v=17" alt="Cuco">
+        <img class="login-logo-img" src="/assets/logo-claro.png?v=18" alt="Cuco">
       </div>
       <h2>Bem-vindo de volta!</h2>
       <p class="login-subtitle">Entre para acessar o painel de escalas.</p>
@@ -70,12 +70,39 @@
     </div>
   </div>
 
+  <!-- PRIMEIRA INSTALAÇÃO -->
+  <div class="login-screen hidden" id="setup-screen">
+    <div class="login-blob login-blob-a"></div>
+    <div class="login-blob login-blob-b"></div>
+    <div class="login-card">
+      <img class="login-logo-img" src="/assets/logo-claro.png?v=18" alt="Cuco">
+      <h2>Criar administrador</h2>
+      <p class="login-subtitle">Primeiro acesso: cadastre quem vai administrar o sistema.</p>
+      <form id="setup-form" class="login-form">
+        <div class="field"><label for="setup-name">Nome</label>
+          <div class="input-icon"><svg class="field-icon" viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="8" r="4"/><path d="M4 21c0-4 3.6-7 8-7s8 3 8 7"/></svg>
+            <input id="setup-name" name="name" autocomplete="name" required minlength="2" placeholder="Seu nome"></div></div>
+        <div class="field"><label for="setup-login">Usuário</label>
+          <div class="input-icon"><svg class="field-icon" viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="8" r="4"/><path d="M4 21c0-4 3.6-7 8-7s8 3 8 7"/></svg>
+            <input id="setup-login" name="login" autocomplete="username" required minlength="3" placeholder="admin"></div></div>
+        <div class="field"><label for="setup-pass">Senha</label>
+          <div class="input-icon"><svg class="field-icon" viewBox="0 0 24 24" aria-hidden="true"><rect x="4" y="10" width="16" height="11" rx="2"/><path d="M8 10V7a4 4 0 0 1 8 0v3"/></svg>
+            <input id="setup-pass" name="password" type="password" autocomplete="new-password" required minlength="6" placeholder="Mínimo 6 caracteres"></div></div>
+        <div class="field"><label for="setup-confirm">Confirmar senha</label>
+          <div class="input-icon"><svg class="field-icon" viewBox="0 0 24 24" aria-hidden="true"><rect x="4" y="10" width="16" height="11" rx="2"/><path d="M8 10V7a4 4 0 0 1 8 0v3"/></svg>
+            <input id="setup-confirm" name="confirm" type="password" autocomplete="new-password" required minlength="6" placeholder="Repita a senha"></div></div>
+        <div class="login-error hidden" id="setup-error"></div>
+        <button class="btn btn-primary btn-block login-button" type="submit">Criar administrador e entrar</button>
+      </form>
+    </div>
+  </div>
+
   <!-- APLICAÇÃO -->
   <div class="layout hidden" id="app">
     <aside class="sidebar">
       <div class="brand">
         <span class="brand-mark" aria-hidden="true"><img src="/assets/mascote_passarinho.svg" alt=""></span>
-        <div class="brand-text"><img class="brand-logo-img" src="/assets/logo-escuro.png?v=17" alt="Cuco"></div>
+        <div class="brand-text"><img class="brand-logo-img" src="/assets/logo-escuro.png?v=18" alt="Cuco"></div>
       </div>
 
       <nav class="nav" id="nav" aria-label="Navegação principal">
@@ -150,6 +177,6 @@
 
   <div id="modal-root"></div>
   <div id="toast-root" class="toast-root" aria-live="polite"></div>
-  <script type="module" src="/js/app.js?v=17"></script>
+  <script type="module" src="/js/app.js?v=18"></script>
 </body>
 </html>

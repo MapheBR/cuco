@@ -1,17 +1,17 @@
-import { store, loadMembers, loadUsers, loadAudit, loadCompliance, loadSwaps, loadNotifications, loadMyShifts, loadSummary, loadSettings, loadShifts } from './store.js?v=17';
-import { api } from './api.js?v=17';
-import { mascotSvg, initMascotInteractions } from './mascot.js?v=17';
-import { loadingState, errorState, toast, confetti, modal, closeModal, photoField, bindPhotoField, confirmDelete, esc } from './ui.js?v=17';
-import { mountLogin } from './views/login.js?v=17';
-import * as dashboard from './views/dashboard.js?v=17';
-import * as shifts from './views/shifts.js?v=17';
-import * as team from './views/team.js?v=17';
-import * as users from './views/users.js?v=17';
-import * as audit from './views/audit.js?v=17';
-import * as compliance from './views/compliance.js?v=17';
-import * as settings from './views/settings.js?v=17';
-import * as privacy from './views/privacy.js?v=17';
-import * as swaps from './views/swaps.js?v=17';
+import { store, loadMembers, loadUsers, loadAudit, loadCompliance, loadSwaps, loadNotifications, loadMyShifts, loadSummary, loadSettings, loadShifts } from './store.js?v=18';
+import { api } from './api.js?v=18';
+import { mascotSvg, initMascotInteractions } from './mascot.js?v=18';
+import { loadingState, errorState, toast, confetti, modal, closeModal, photoField, bindPhotoField, confirmDelete, esc } from './ui.js?v=18';
+import { mountLogin } from './views/login.js?v=18';
+import * as dashboard from './views/dashboard.js?v=18';
+import * as shifts from './views/shifts.js?v=18';
+import * as team from './views/team.js?v=18';
+import * as users from './views/users.js?v=18';
+import * as audit from './views/audit.js?v=18';
+import * as compliance from './views/compliance.js?v=18';
+import * as settings from './views/settings.js?v=18';
+import * as privacy from './views/privacy.js?v=18';
+import * as swaps from './views/swaps.js?v=18';
 
 const VIEWS = {
   dashboard: { module: dashboard, title: 'Visão geral', eyebrow: 'PAINEL' },
@@ -30,6 +30,7 @@ if ('serviceWorker' in navigator) navigator.serviceWorker.register('/sw.js').cat
 const viewRoot = document.getElementById('view');
 const splash = document.getElementById('splash');
 const loginScreen = document.getElementById('login-screen');
+const setupScreen = document.getElementById('setup-screen');
 const appShell = document.getElementById('app');
 const delay = (ms) => new Promise((resolve) => setTimeout(resolve, ms));
 
@@ -157,6 +158,28 @@ function openProfile() {
   });
 }
 
+let setupBound = false;
+function showSetup() {
+  setupScreen.classList.remove('hidden');
+  if (setupBound) return;
+  setupBound = true;
+  document.getElementById('setup-form').addEventListener('submit', async (event) => {
+    event.preventDefault();
+    const errorBox = document.getElementById('setup-error');
+    errorBox.classList.add('hidden');
+    const body = Object.fromEntries(new FormData(event.currentTarget));
+    try {
+      store.user = await api.post('/api/setup', body);
+      setupScreen.classList.add('hidden');
+      confetti();
+      await enterApp();
+    } catch (error) {
+      errorBox.textContent = error.message;
+      errorBox.classList.remove('hidden');
+    }
+  });
+}
+
 function showLogin() {
   appShell.classList.add('hidden');
   loginScreen.classList.remove('hidden');
@@ -258,6 +281,12 @@ async function boot() {
     await delay(260);
   }
   try {
+    const setup = await api.get('/api/setup/status');
+    if (setup.needsSetup) {
+      showSetup();
+      splash.classList.add('hidden');
+      return;
+    }
     store.user = await api.get('/api/me');
     await enterApp();
   } catch {

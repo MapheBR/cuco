@@ -193,7 +193,10 @@ function seed() {
 }
 
 migrate();
-seed();
-seedUsers();
+seedSettings();
+if (process.env.SEED_DEMO === '1') {
+  seed();
+  seedUsers();
+}
 
 module.exports = db;

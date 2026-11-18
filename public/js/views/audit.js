@@ -1,5 +1,5 @@
-import { store } from '../store.js?v=17';
-import { esc, actionTag, emptyState, toast } from '../ui.js?v=17';
+import { store } from '../store.js?v=18';
+import { esc, actionTag, emptyState, toast } from '../ui.js?v=18';
 
 function table() {
   const rows = store.audit;

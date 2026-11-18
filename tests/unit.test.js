@@ -6,6 +6,7 @@ const os = require('node:os');
 const path = require('node:path');
 
 process.env.DB_PATH = path.join(os.tmpdir(), `cuco-unit-${process.pid}.db`);
+process.env.SEED_DEMO = '1';
 const api = require('../server/api');
 const db = require('../server/db');
 

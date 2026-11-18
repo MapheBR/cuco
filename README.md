@@ -14,17 +14,20 @@ Abra **http://localhost:3000**. Para reiniciar ao editar: `npm run dev`. No Wind
 
 Variáveis de ambiente: `PORT`, `HOST` e `SESSION_SECRET` (defina uma chave fixa antes de publicar).
 
+## Primeiro acesso (instalação limpa)
+
+Ao abrir pela primeira vez, o sistema mostra a tela **Criar administrador**: informe nome, usuário e senha (mínimo 6 caracteres). Depois disso é só cadastrar integrantes, escalas e os demais usuários. Não existem dados de exemplo por padrão — usuários, integrantes e escalas começam vazios.
+
+Para gerar dados de demonstração (útil em testes), inicie com `SEED_DEMO=1 npm start`: são criados `admin/admin123`, `funcionario/funcionario123`, `cuco/cuco123`, 5 integrantes e escalas de exemplo.
+
 ## Perfis de acesso
 
-| Usuário | Senha | Perfil | Acesso |
-| --- | --- | --- | --- |
-| `admin` | `admin123` | Administrador | Painel completo, escalas, equipe, usuários, auditoria e configurações |
-| `funcionario` | `funcionario123` | Funcionário | Somente o dashboard, com as próprias escalas e confirmação de turno |
-| `cuco` | `cuco123` | Funcionário | Segundo funcionário de exemplo |
+| Perfil | Acesso |
+| --- | --- |
+| Administrador | Painel completo, escalas, equipe, trocas, usuários, auditoria, conformidade e configurações |
+| Funcionário | Somente dashboard e privacidade; vê as próprias escalas, confirma turnos e solicita trocas |
 
 O funcionário é vinculado a um integrante da equipe. No cadastro de usuário (tela de Usuários), o campo **Integrante vinculado** define quais escalas aparecem no painel dele. As rotas de administração retornam **403** para funcionários — a proteção existe no servidor, não apenas na interface.
-
-> Troque as senhas padrão antes de publicar.
 
 ## Funcionalidades
 

@@ -413,6 +413,30 @@ async function handleApi(req, res, url) {
     return sendJson(res, 200, { data: auth.publicUser(auth.requireUser(req)) });
   }
 
+  // --- primeira instalação ---
+  if (route === '/api/setup/status' && method === 'GET') {
+    const total = db.prepare('SELECT COUNT(*) AS total FROM users').get().total;
+    return sendJson(res, 200, { data: { needsSetup: total === 0 } });
+  }
+  if (route === '/api/setup' && method === 'POST') {
+    if (db.prepare('SELECT COUNT(*) AS total FROM users').get().total > 0) throw fail(409, 'A configuração inicial já foi concluída');
+    const body = await readJson(req);
+    const name = asText(body.name, 80);
+    const login = asText(body.login, 40).toLowerCase();
+    const password = String(body.password || '');
+    if (name.length < 2) throw fail(400, 'Informe o nome (mínimo 2 caracteres)');
+    if (!/^[a-z0-9._-]{3,40}$/.test(login)) throw fail(400, 'Login inválido (3 a 40 caracteres: letras, números, . _ -)');
+    if (password.length < 6) throw fail(400, 'A senha precisa ter ao menos 6 caracteres');
+    if (password !== String(body.confirm || '')) throw fail(400, 'As senhas não coincidem');
+    const result = db.prepare("INSERT INTO users (name, login, password_hash, role, active) VALUES (?, ?, ?, 'admin', 1)")
+      .run(name, login, auth.hashPassword(password));
+    const created = db.prepare('SELECT * FROM users WHERE id = ?').get(result.lastInsertRowid);
+    const csrf = auth.createCsrf(created.id);
+    return sendJson(res, 201,
+      { data: { ...auth.publicUser(created), csrf } },
+      { 'Set-Cookie': [auth.sessionCookie(created, true), auth.csrfCookie(csrf)] });
+  }
+
   const user = auth.requireUser(req);
   if (!['GET', 'HEAD', 'OPTIONS'].includes(method)) {
     const origin = req.headers.origin;
