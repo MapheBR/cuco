@@ -190,9 +190,9 @@ tbody tr:last-child td { border-bottom: 0; }
 
 /* ---------- mascote / fotos ---------- */
 .brand-mark img { width: 100%; height: 100%; display: block; }
-.brand-logo-img { display: block; width: 104px; height: auto; }
-.login-logo-img { display: block; width: 156px; height: auto; }
-.splash-logo-img { display: block; width: 250px; max-width: 70vw; height: auto; margin: 10px auto 0; filter: drop-shadow(0 6px 12px rgba(0,0,0,.18)); }
+.brand-logo-img { display: block; width: 70px; height: auto; }
+.login-logo-img { display: block; width: 112px; height: auto; }
+.splash-logo-img { display: block; width: 180px; max-width: 60vw; height: auto; margin: 8px auto 0; filter: drop-shadow(0 6px 12px rgba(0,0,0,.18)); }
 .mascot-img, .mascot-svg { width: 100%; height: 100%; object-fit: contain; display: block; }
 .wave-arm { transform-origin: 340px 380px; transform-box: view-box; }
 .avatar { overflow: hidden; }
@@ -236,7 +236,7 @@ tbody tr:last-child td { border-bottom: 0; }
   background: rgba(255,255,255,.08); filter: blur(10px); animation: glow-pulse 2.6s ease-in-out infinite;
 }
 .splash-content { position: relative; text-align: center; padding: 24px; }
-.splash-mascot { width: 148px; height: 148px; filter: drop-shadow(0 14px 20px rgba(0,0,0,.22)); animation: mascot-float 2.2s ease-in-out infinite; }
+.splash-mascot { width: 108px; height: 108px; filter: drop-shadow(0 12px 18px rgba(0,0,0,.22)); animation: mascot-float 2.2s ease-in-out infinite; }
 .splash-logo { font-family: var(--font-title); font-size: 46px; font-weight: 900; letter-spacing: -2px; line-height: 1; }
 .splash-logo span, .login-brand h1 span { color: var(--accent); }
 .splash-tagline { margin-top: 6px; font-size: 13px; opacity: .85; }
@@ -260,7 +260,7 @@ tbody tr:last-child td { border-bottom: 0; }
   border: 1px solid rgba(255,255,255,.8); animation: login-rise .55s cubic-bezier(.2,.8,.2,1) both;
 }
 .login-brand { display: flex; align-items: center; gap: 12px; margin-bottom: 22px; }
-.login-mascot { width: 62px; height: 62px; position: relative; flex: 0 0 62px; }
+.login-mascot { width: 48px; height: 48px; position: relative; flex: 0 0 48px; }
 .login-mascot::after {
   content: ''; position: absolute; inset: -7px; border-radius: 50%;
   border: 2px dashed rgba(30,138,76,.28); animation: ring-spin 12s linear infinite;

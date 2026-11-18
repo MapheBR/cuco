@@ -1,6 +1,6 @@
-import { store } from '../store.js?v=21';
-import { api } from '../api.js?v=21';
-import { esc, toast, confirmDelete, emptyState } from '../ui.js?v=21';
+import { store } from '../store.js?v=22';
+import { api } from '../api.js?v=22';
+import { esc, toast, confirmDelete, emptyState } from '../ui.js?v=22';
 
 function list(rows, kind, label) {
   if (!rows.length) return emptyState(`Nenhum ${label.toLowerCase()}`, `Cadastre o primeiro ${label.toLowerCase()} acima.`);

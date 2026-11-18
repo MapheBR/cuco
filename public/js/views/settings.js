@@ -1,6 +1,6 @@
-import { store } from '../store.js?v=21';
-import { api } from '../api.js?v=21';
-import { esc, toast } from '../ui.js?v=21';
+import { store } from '../store.js?v=22';
+import { api } from '../api.js?v=22';
+import { esc, toast } from '../ui.js?v=22';
 
 export function render() {
   const s = store.settings;
