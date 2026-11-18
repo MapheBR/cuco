@@ -1,4 +1,4 @@
-import { api } from './api.js?v=18';
+import { api } from './api.js?v=19';
 
 export const store = {
   view: 'dashboard',
@@ -13,6 +13,12 @@ export const store = {
   compliancePublished: null,
   swaps: [],
   notifications: { rows: [], unread: 0 },
+  invitations: [],
+  departments: [],
+  teams: [],
+  positions: [],
+  tasks: [],
+  tickets: [],
   auditFilters: { q: '', limit: '100' },
   myShifts: { shifts: [], stats: {} },
   summary: null,
@@ -48,6 +54,23 @@ export async function loadSwaps() {
 export async function loadNotifications() {
   store.notifications = await api.get('/api/notifications');
   return store.notifications;
+}
+
+export async function loadFlow() {
+  const [departments, teams, positions, tasks, tickets] = await Promise.all([
+    api.get('/api/departments'), api.get('/api/teams'), api.get('/api/positions'),
+    api.get('/api/tasks'), api.get('/api/tickets'),
+  ]);
+  store.departments = departments;
+  store.teams = teams;
+  store.positions = positions;
+  store.tasks = tasks;
+  store.tickets = tickets;
+}
+
+export async function loadInvitations() {
+  store.invitations = await api.get('/api/invitations');
+  return store.invitations;
 }
 
 export async function loadAudit() {

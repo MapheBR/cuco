@@ -16,7 +16,7 @@ Variáveis de ambiente: `PORT`, `HOST` e `SESSION_SECRET` (defina uma chave fixa
 
 ## Primeiro acesso (instalação limpa)
 
-Ao abrir pela primeira vez, o sistema mostra a tela **Criar administrador**: informe nome, usuário e senha (mínimo 6 caracteres). Depois disso é só cadastrar integrantes, escalas e os demais usuários. Não existem dados de exemplo por padrão — usuários, integrantes e escalas começam vazios.
+Ao abrir pela primeira vez, o sistema mostra a tela **Criar administrador** já preenchida com **Marcos Feliphe** e usuário `marcos`. Use o botão **Gerar senha principal** para criar uma senha forte de 14 caracteres (ela aparece nos dois campos). Depois disso é só cadastrar integrantes, escalas e os demais usuários. Não existem dados de exemplo por padrão — usuários, integrantes e escalas começam vazios.
 
 Para gerar dados de demonstração (útil em testes), inicie com `SEED_DEMO=1 npm start`: são criados `admin/admin123`, `funcionario/funcionario123`, `cuco/cuco123`, 5 integrantes e escalas de exemplo.
 
@@ -39,6 +39,9 @@ O funcionário é vinculado a um integrante da equipe. No cadastro de usuário (
 - Auditoria: trilha de login, logout, criações, edições, exclusões e alterações de configuração, com filtro e exportação.
 - Configurações gerais: empresa, contato, horários padrão e dias de aviso.
 - **Diferenciais**: regras configuráveis por convenção, selo de publicação com hash SHA-256 e dossiê de conformidade em PDF para advogado/sindicato/RT.
+- **Convites e vínculo**: o administrador gera um código válido por 7 dias; o novo usuário se cadastra informando o código; o pedido fica pendente e o administrador aprova ou recusa o vínculo.
+- **Organização**: setores, equipes e cargos separados, com níveis e vínculo com integrantes.
+- **Fluxo de trabalho**: tarefas atribuídas a pessoa/equipe/setor com status, prioridade, prazo e comentários; chamados enviados a um setor com conversa e status gerido pelo administrador.
 - **Troca de turnos**: o funcionário solicita, o administrador aprova e as notificações avisam as partes.
 - Privacidade: aviso LGPD e exportação/exclusão dos próprios dados pelo perfil.
 - PWA: instalável no celular, com cache offline para leitura do painel e das escalas.
@@ -70,7 +73,8 @@ Comandos úteis: `npm run check` (sintaxe), `npm run lint` (ESLint), `npm test` 
 
 | Método | Rota | Perfil |
 | --- | --- | --- |
-| GET | `/api/health` | público |
+| GET | `/api/health` · `/api/setup/status` | público |
+| POST | `/api/setup` (primeiro admin) · `/api/register` (com convite) | público |
 | POST | `/api/login` · `/api/logout` | público / autenticado |
 | GET | `/api/me` · `/api/summary` · `/api/settings` (leitura) · `/api/my-shifts` | autenticado |
 | PUT | `/api/me/profile` · `/api/my-shifts/:id/confirm` | autenticado |
@@ -84,6 +88,10 @@ Comandos úteis: `npm run check` (sintaxe), `npm run lint` (ESLint), `npm test` 
 | GET | `/api/compliance/published` · `/api/compliance/dossier` (PDF) | autenticado / admin |
 | POST | `/api/shifts/:id/swap` · GET `/api/swaps` · PUT `/api/swaps/:id` | autenticado / admin (aprovação) |
 | GET | `/api/notifications` · PUT `/api/notifications/:id/read` · `/api/team-options` | autenticado |
+| GET/POST/PUT/DELETE | `/api/departments` · `/api/teams` · `/api/positions` | leitura: autenticado / escrita: admin |
+| GET/POST | `/api/invitations` · PUT `/api/invitations/:id/approve\|reject` | admin |
+| GET/POST/PUT/DELETE | `/api/tasks` · `/api/tasks/:id/comments` | autenticado (escopo) / admin |
+| GET/POST/PUT | `/api/tickets` · `/api/tickets/:id/messages` | autenticado (escopo) / admin |
 | GET | `/api/audit?q=&limit=` | admin |
 | PUT | `/api/settings` | admin |
 

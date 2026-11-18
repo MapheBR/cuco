@@ -1,6 +1,6 @@
-import { store } from '../store.js?v=18';
-import { api } from '../api.js?v=18';
-import { esc, avatar, toast, confirmDelete, emptyState, photoField, bindPhotoField } from '../ui.js?v=18';
+import { store } from '../store.js?v=19';
+import { api } from '../api.js?v=19';
+import { esc, avatar, toast, confirmDelete, emptyState, photoField, bindPhotoField } from '../ui.js?v=19';
 
 const COLORS = [
   ['#1E8A4C', 'Verde'], ['#2E9E86', 'Verde-azulado'], ['#F2A93B', 'Dourado'],

@@ -19,6 +19,93 @@ db.exec(`
     email TEXT NOT NULL DEFAULT '',
     color TEXT NOT NULL DEFAULT '#1E8A4C',
     active INTEGER NOT NULL DEFAULT 1,
+    department_id INTEGER,
+    team_id INTEGER,
+    position_id INTEGER,
+    created_at TEXT NOT NULL DEFAULT (datetime('now'))
+  );
+
+  CREATE TABLE IF NOT EXISTS departments (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    name TEXT NOT NULL UNIQUE,
+    description TEXT NOT NULL DEFAULT '',
+    active INTEGER NOT NULL DEFAULT 1,
+    created_at TEXT NOT NULL DEFAULT (datetime('now'))
+  );
+
+  CREATE TABLE IF NOT EXISTS teams (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    name TEXT NOT NULL,
+    department_id INTEGER REFERENCES departments(id) ON DELETE SET NULL,
+    description TEXT NOT NULL DEFAULT '',
+    active INTEGER NOT NULL DEFAULT 1,
+    created_at TEXT NOT NULL DEFAULT (datetime('now'))
+  );
+
+  CREATE TABLE IF NOT EXISTS positions (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    name TEXT NOT NULL UNIQUE,
+    description TEXT NOT NULL DEFAULT '',
+    level INTEGER NOT NULL DEFAULT 1,
+    active INTEGER NOT NULL DEFAULT 1,
+    created_at TEXT NOT NULL DEFAULT (datetime('now'))
+  );
+
+  CREATE TABLE IF NOT EXISTS invitations (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    code TEXT NOT NULL UNIQUE,
+    role TEXT NOT NULL DEFAULT 'user',
+    department_id INTEGER REFERENCES departments(id) ON DELETE SET NULL,
+    team_id INTEGER REFERENCES teams(id) ON DELETE SET NULL,
+    member_id INTEGER REFERENCES members(id) ON DELETE SET NULL,
+    status TEXT NOT NULL DEFAULT 'novo',
+    created_by INTEGER REFERENCES users(id),
+    used_by INTEGER REFERENCES users(id),
+    expires_at TEXT NOT NULL,
+    created_at TEXT NOT NULL DEFAULT (datetime('now'))
+  );
+
+  CREATE TABLE IF NOT EXISTS tasks (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    title TEXT NOT NULL,
+    description TEXT NOT NULL DEFAULT '',
+    assigned_to INTEGER REFERENCES users(id) ON DELETE SET NULL,
+    team_id INTEGER REFERENCES teams(id) ON DELETE SET NULL,
+    department_id INTEGER REFERENCES departments(id) ON DELETE SET NULL,
+    created_by INTEGER REFERENCES users(id),
+    status TEXT NOT NULL DEFAULT 'pendente',
+    priority TEXT NOT NULL DEFAULT 'media',
+    due_date TEXT NOT NULL DEFAULT '',
+    created_at TEXT NOT NULL DEFAULT (datetime('now')),
+    updated_at TEXT NOT NULL DEFAULT (datetime('now'))
+  );
+
+  CREATE TABLE IF NOT EXISTS task_comments (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    task_id INTEGER NOT NULL REFERENCES tasks(id) ON DELETE CASCADE,
+    user_id INTEGER REFERENCES users(id) ON DELETE SET NULL,
+    message TEXT NOT NULL,
+    created_at TEXT NOT NULL DEFAULT (datetime('now'))
+  );
+
+  CREATE TABLE IF NOT EXISTS tickets (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    title TEXT NOT NULL,
+    description TEXT NOT NULL DEFAULT '',
+    department_id INTEGER REFERENCES departments(id) ON DELETE SET NULL,
+    created_by INTEGER REFERENCES users(id),
+    assigned_to INTEGER REFERENCES users(id) ON DELETE SET NULL,
+    status TEXT NOT NULL DEFAULT 'aberto',
+    priority TEXT NOT NULL DEFAULT 'media',
+    created_at TEXT NOT NULL DEFAULT (datetime('now')),
+    updated_at TEXT NOT NULL DEFAULT (datetime('now'))
+  );
+
+  CREATE TABLE IF NOT EXISTS ticket_messages (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    ticket_id INTEGER NOT NULL REFERENCES tickets(id) ON DELETE CASCADE,
+    user_id INTEGER REFERENCES users(id) ON DELETE SET NULL,
+    message TEXT NOT NULL,
     created_at TEXT NOT NULL DEFAULT (datetime('now'))
   );
 
@@ -97,6 +184,9 @@ db.exec(`
 function migrate() {
   const memberColumns = db.prepare('PRAGMA table_info(members)').all().map((column) => column.name);
   if (!memberColumns.includes('photo')) db.exec("ALTER TABLE members ADD COLUMN photo TEXT NOT NULL DEFAULT ''");
+  if (!memberColumns.includes('department_id')) db.exec('ALTER TABLE members ADD COLUMN department_id INTEGER');
+  if (!memberColumns.includes('team_id')) db.exec('ALTER TABLE members ADD COLUMN team_id INTEGER');
+  if (!memberColumns.includes('position_id')) db.exec('ALTER TABLE members ADD COLUMN position_id INTEGER');
   const userColumns = db.prepare('PRAGMA table_info(users)').all().map((column) => column.name);
   if (!userColumns.includes('member_id')) db.exec('ALTER TABLE users ADD COLUMN member_id INTEGER REFERENCES members(id) ON DELETE SET NULL');
   if (!userColumns.includes('token_version')) db.exec("ALTER TABLE users ADD COLUMN token_version INTEGER NOT NULL DEFAULT 0");

@@ -186,6 +186,69 @@ test('smoke Cuco', async (t) => {
     assert.ok(notes.data.rows.length > 0);
   });
 
+  await t.test('convite, vínculo, organização, tarefas e chamados', async () => {
+    const admin = await login('admin', 'admin123');
+    const headers = { Cookie: admin.cookies, 'Content-Type': 'application/json', 'X-CSRF-Token': admin.payload.data.csrf };
+    const invite = await (await fetch(`${BASE}/api/invitations`, {
+      method: 'POST', headers, body: JSON.stringify({ role: 'user' }),
+    })).json();
+    assert.match(invite.data.code, /^[A-F0-9]{10}$/);
+
+    const registered = await fetch(`${BASE}/api/register`, {
+      method: 'POST', headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ name: 'Novo Usuario', login: 'novo_user', password: 'senha123', confirm: 'senha123', invite_code: invite.data.code }),
+    });
+    assert.equal(registered.status, 201);
+    assert.equal((await login('novo_user', 'senha123')).response.status, 401);
+
+    const invites = await (await fetch(`${BASE}/api/invitations`, { headers: { Cookie: admin.cookies } })).json();
+    const pending = invites.data.find((item) => item.code === invite.data.code);
+    const approved = await fetch(`${BASE}/api/invitations/${pending.id}/approve`, { method: 'PUT', headers, body: '{}' });
+    assert.equal(approved.status, 200);
+    const employee = await login('novo_user', 'senha123');
+    assert.equal(employee.response.status, 200);
+
+    const department = await (await fetch(`${BASE}/api/departments`, {
+      method: 'POST', headers, body: JSON.stringify({ name: 'Operações', description: 'Área teste' }),
+    })).json();
+    const team = await (await fetch(`${BASE}/api/teams`, {
+      method: 'POST', headers, body: JSON.stringify({ name: 'Turno A', department_id: department.data.id }),
+    })).json();
+    const position = await (await fetch(`${BASE}/api/positions`, {
+      method: 'POST', headers, body: JSON.stringify({ name: 'Operador', level: 1 }),
+    })).json();
+    assert.ok(department.data.id && team.data.id && position.data.id);
+
+    const employeeHeaders = { Cookie: employee.cookies, 'Content-Type': 'application/json', 'X-CSRF-Token': employee.payload.data.csrf };
+    const task = await (await fetch(`${BASE}/api/tasks`, {
+      method: 'POST', headers,
+      body: JSON.stringify({ title: 'Conferir estoque', assigned_to: (await (await fetch(`${BASE}/api/me`, { headers: { Cookie: employee.cookies } })).json()).data.id, department_id: department.data.id }),
+    })).json();
+    const myTasks = await (await fetch(`${BASE}/api/tasks`, { headers: { Cookie: employee.cookies } })).json();
+    assert.ok(myTasks.data.some((item) => item.id === task.data.id));
+    const updated = await fetch(`${BASE}/api/tasks/${task.data.id}`, {
+      method: 'PUT', headers: employeeHeaders, body: JSON.stringify({ status: 'concluida' }),
+    });
+    assert.equal(updated.status, 200);
+    const comment = await fetch(`${BASE}/api/tasks/${task.data.id}/comments`, {
+      method: 'POST', headers: employeeHeaders, body: JSON.stringify({ message: 'Concluído' }),
+    });
+    assert.equal(comment.status, 201);
+
+    const ticket = await (await fetch(`${BASE}/api/tickets`, {
+      method: 'POST', headers: employeeHeaders,
+      body: JSON.stringify({ title: 'Lâmpada queimada', department_id: department.data.id }),
+    })).json();
+    const ticketUpdate = await fetch(`${BASE}/api/tickets/${ticket.data.id}`, {
+      method: 'PUT', headers, body: JSON.stringify({ status: 'em_andamento' }),
+    });
+    assert.equal(ticketUpdate.status, 200);
+    const message = await fetch(`${BASE}/api/tickets/${ticket.data.id}/messages`, {
+      method: 'POST', headers: employeeHeaders, body: JSON.stringify({ message: 'Ainda aguardando' }),
+    });
+    assert.equal(message.status, 201);
+  });
+
   await t.test('validador de escala responde com limites', async () => {
     const admin = await login('admin', 'admin123');
     const response = await fetch(`${BASE}/api/compliance`, { headers: { Cookie: admin.cookies } });

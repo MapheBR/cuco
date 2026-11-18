@@ -42,7 +42,14 @@ function validPhoto(value) {
 }
 
 function listMembers() {
-  return db.prepare('SELECT id, name, role, email, color, active, photo, created_at FROM members ORDER BY active DESC, name ASC').all();
+  return db.prepare(`
+    SELECT m.*, d.name AS department_name, t.name AS team_name, p.name AS position_name
+    FROM members m
+    LEFT JOIN departments d ON d.id = m.department_id
+    LEFT JOIN teams t ON t.id = m.team_id
+    LEFT JOIN positions p ON p.id = m.position_id
+    ORDER BY m.active DESC, m.name ASC
+  `).all();
 }
 
 function validateMember(body, partial = false) {
@@ -56,6 +63,12 @@ function validateMember(body, partial = false) {
   if (!partial || body.color !== undefined) data.color = COLORS.has(body.color) ? body.color : '#1E8A4C';
   if (body.active !== undefined) data.active = body.active ? 1 : 0;
   if (body.photo !== undefined) data.photo = validPhoto(body.photo);
+  for (const [field, table] of [['department_id', 'departments'], ['team_id', 'teams'], ['position_id', 'positions']]) {
+    if (body[field] === undefined) continue;
+    const value = Number(body[field]) || null;
+    if (value && !db.prepare(`SELECT 1 FROM ${table} WHERE id = ?`).get(value)) throw fail(400, `${field} inválido`);
+    data[field] = value;
+  }
   return data;
 }
 
@@ -348,6 +361,11 @@ function logActivity(req, action, detail = '') {
     .run(user.id, user.name, action, asText(detail, 300), ip, agent);
 }
 
+function memberContext(user) {
+  if (!user.member_id) return {};
+  return db.prepare('SELECT department_id, team_id FROM members WHERE id = ?').get(user.member_id) || {};
+}
+
 function notifyUser(userId, message) {
   if (!userId) return;
   db.prepare('INSERT INTO notifications (user_id, message) VALUES (?, ?)').run(userId, asText(message, 240));
@@ -437,6 +455,30 @@ async function handleApi(req, res, url) {
       { 'Set-Cookie': [auth.sessionCookie(created, true), auth.csrfCookie(csrf)] });
   }
 
+  // --- cadastro por convite (público) ---
+  if (route === '/api/register' && method === 'POST') {
+    const body = await readJson(req);
+    const name = asText(body.name, 80);
+    const login = asText(body.login, 40).toLowerCase();
+    const password = String(body.password || '');
+    if (name.length < 2) throw fail(400, 'Informe o nome (mínimo 2 caracteres)');
+    if (!/^[a-z0-9._-]{3,40}$/.test(login)) throw fail(400, 'Login inválido (3 a 40 caracteres: letras, números, . _ -)');
+    if (password.length < 6) throw fail(400, 'A senha precisa ter ao menos 6 caracteres');
+    if (password !== String(body.confirm || '')) throw fail(400, 'As senhas não coincidem');
+    if (db.prepare('SELECT 1 FROM users WHERE login = ?').get(login)) throw fail(400, 'Este login já está em uso');
+    const code = asText(body.invite_code, 40).toUpperCase();
+    const invite = db.prepare("SELECT * FROM invitations WHERE code = ? AND status = 'novo'").get(code);
+    if (!invite) throw fail(400, 'Convite inválido ou já utilizado');
+    if (invite.expires_at < new Date().toISOString().slice(0, 10)) throw fail(400, 'Convite expirado');
+    const result = db.prepare("INSERT INTO users (name, login, password_hash, role, active, member_id) VALUES (?, ?, ?, ?, 0, ?)")
+      .run(name, login, auth.hashPassword(password), invite.role, invite.member_id);
+    db.prepare('UPDATE invitations SET used_by = ?, status = ? WHERE id = ?').run(result.lastInsertRowid, 'usado', invite.id);
+    for (const admin of db.prepare("SELECT id FROM users WHERE role = 'admin' AND active = 1").all()) {
+      notifyUser(admin.id, `${name} solicitou vínculo através do convite ${code}`);
+    }
+    return sendJson(res, 201, { data: { message: 'Cadastro recebido. Aguarde a aprovação do administrador.' } });
+  }
+
   const user = auth.requireUser(req);
   if (!['GET', 'HEAD', 'OPTIONS'].includes(method)) {
     const origin = req.headers.origin;
@@ -455,7 +497,10 @@ async function handleApi(req, res, url) {
     || (route === '/api/team-options' && method === 'GET')
     || (route === '/api/notifications' && method === 'GET')
     || (/^\/api\/notifications\/\d+\/read$/.test(route) && method === 'PUT')
-    || (/^\/api\/my-shifts\/\d+\/confirm$/.test(route) && method === 'PUT');
+    || (/^\/api\/my-shifts\/\d+\/confirm$/.test(route) && method === 'PUT')
+    || (['/api/departments', '/api/teams', '/api/positions', '/api/tasks', '/api/tickets'].includes(route) && ['GET', 'POST'].includes(method))
+    || (/^\/api\/tasks\/\d+(\/comments)?$/.test(route) && ['GET', 'PUT', 'POST'].includes(method))
+    || (/^\/api\/tickets\/\d+(\/messages)?$/.test(route) && ['GET', 'PUT', 'POST'].includes(method));
   if (user.role !== 'admin' && !employeeAllowed) throw fail(403, 'Área restrita a administradores');
 
   if (route === '/api/upload' && method === 'POST') {
@@ -591,8 +636,10 @@ async function handleApi(req, res, url) {
   if (route === '/api/members' && method === 'GET') return sendJson(res, 200, { data: listMembers() });
   if (route === '/api/members' && method === 'POST') {
     const data = validateMember(await readJson(req));
-    const result = db.prepare('INSERT INTO members (name, role, email, color, active, photo) VALUES (?, ?, ?, ?, ?, ?)')
-      .run(data.name, data.role, data.email, data.color, data.active ?? 1, data.photo ?? '');
+    const result = db.prepare(`INSERT INTO members (name, role, email, color, active, photo, department_id, team_id, position_id)
+      VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)`)
+      .run(data.name, data.role, data.email, data.color, data.active ?? 1, data.photo ?? '',
+        data.department_id ?? null, data.team_id ?? null, data.position_id ?? null);
     logActivity(req, 'member.create', data.name);
     return sendJson(res, 201, { data: db.prepare('SELECT * FROM members WHERE id = ?').get(result.lastInsertRowid) });
   }
@@ -825,6 +872,254 @@ async function handleApi(req, res, url) {
   if (notificationMatch && method === 'PUT') {
     db.prepare('UPDATE notifications SET read = 1 WHERE id = ? AND user_id = ?').run(Number(notificationMatch[1]), user.id);
     return sendJson(res, 200, { ok: true });
+  }
+
+  // --- convites e aprovação de vínculo ---
+  if (route === '/api/invitations' && method === 'GET') {
+    auth.requireAdmin(req);
+    const rows = db.prepare(`
+      SELECT i.*, u.name AS user_name, u.login AS user_login, d.name AS department_name, t.name AS team_name, m.name AS member_name
+      FROM invitations i
+      LEFT JOIN users u ON u.id = i.used_by
+      LEFT JOIN departments d ON d.id = i.department_id
+      LEFT JOIN teams t ON t.id = i.team_id
+      LEFT JOIN members m ON m.id = i.member_id
+      ORDER BY i.id DESC LIMIT 200
+    `).all();
+    return sendJson(res, 200, { data: rows });
+  }
+  if (route === '/api/invitations' && method === 'POST') {
+    auth.requireAdmin(req);
+    const body = await readJson(req);
+    const code = crypto.randomBytes(5).toString('hex').toUpperCase();
+    const role = body.role === 'admin' ? 'admin' : 'user';
+    const expires = new Date();
+    expires.setDate(expires.getDate() + 7);
+    db.prepare(`INSERT INTO invitations (code, role, department_id, team_id, member_id, created_by, expires_at)
+      VALUES (?, ?, ?, ?, ?, ?, ?)`).run(
+      code, role, Number(body.department_id) || null, Number(body.team_id) || null,
+      Number(body.member_id) || null, user.id, expires.toISOString().slice(0, 10),
+    );
+    logActivity(req, 'invite.create', code);
+    return sendJson(res, 201, { data: { code, role, expires_at: expires.toISOString().slice(0, 10) } });
+  }
+  const invitationMatch = /^\/api\/invitations\/(\d+)\/(approve|reject)$/.exec(route);
+  if (invitationMatch && method === 'PUT') {
+    auth.requireAdmin(req);
+    const id = Number(invitationMatch[1]);
+    const decision = invitationMatch[2];
+    const invite = db.prepare('SELECT * FROM invitations WHERE id = ?').get(id);
+    if (!invite || !invite.used_by) throw fail(404, 'Solicitação não encontrada');
+    const status = decision === 'approve' ? 'aprovado' : 'recusado';
+    if (decision === 'approve') {
+      db.prepare('UPDATE users SET active = 1 WHERE id = ?').run(invite.used_by);
+      notifyUser(invite.used_by, 'Seu vínculo foi aprovado. Você já pode entrar no sistema.');
+    }
+    db.prepare('UPDATE invitations SET status = ? WHERE id = ?').run(status, id);
+    logActivity(req, 'invite.review', `Convite #${id}: ${status}`);
+    return sendJson(res, 200, { data: { id, status } });
+  }
+
+  // --- organização: setores, equipes e cargos ---
+  const catalogs = {
+    departments: { table: 'departments', label: 'Setor' },
+    teams: { table: 'teams', label: 'Equipe' },
+    positions: { table: 'positions', label: 'Cargo' },
+  };
+  const catalogMatch = /^\/api\/(departments|teams|positions)(?:\/(\d+))?$/.exec(route);
+  if (catalogMatch) {
+    const config = catalogs[catalogMatch[1]];
+    const id = catalogMatch[2] ? Number(catalogMatch[2]) : null;
+    if (method === 'GET') {
+      return sendJson(res, 200, { data: db.prepare(`SELECT * FROM ${config.table} ORDER BY name`).all() });
+    }
+    auth.requireAdmin(req);
+    if (method === 'POST') {
+      const body = await readJson(req);
+      const name = asText(body.name, 80);
+      if (name.length < 2) throw fail(400, `Informe o nome do ${config.label.toLowerCase()}`);
+      const result = config.table === 'positions'
+        ? db.prepare('INSERT INTO positions (name, description, level) VALUES (?, ?, ?)').run(name, asText(body.description, 300), Math.max(1, Number(body.level) || 1))
+        : config.table === 'teams'
+          ? db.prepare('INSERT INTO teams (name, department_id, description) VALUES (?, ?, ?)').run(name, Number(body.department_id) || null, asText(body.description, 300))
+          : db.prepare('INSERT INTO departments (name, description) VALUES (?, ?)').run(name, asText(body.description, 300));
+      logActivity(req, `${config.table}.create`, name);
+      return sendJson(res, 201, { data: db.prepare(`SELECT * FROM ${config.table} WHERE id = ?`).get(result.lastInsertRowid) });
+    }
+    if (method === 'PUT' && id) {
+      const current = db.prepare(`SELECT * FROM ${config.table} WHERE id = ?`).get(id);
+      if (!current) throw fail(404, `${config.label} não encontrado`);
+      const body = await readJson(req);
+      const name = body.name !== undefined ? asText(body.name, 80) : current.name;
+      if (name.length < 2) throw fail(400, 'Nome muito curto');
+      const active = body.active === undefined ? current.active : (body.active ? 1 : 0);
+      if (config.table === 'positions') {
+        db.prepare('UPDATE positions SET name = ?, description = ?, level = ?, active = ? WHERE id = ?')
+          .run(name, body.description !== undefined ? asText(body.description, 300) : current.description,
+            body.level !== undefined ? Math.max(1, Number(body.level) || 1) : current.level, active, id);
+      } else if (config.table === 'teams') {
+        db.prepare('UPDATE teams SET name = ?, department_id = ?, description = ?, active = ? WHERE id = ?')
+          .run(name, body.department_id !== undefined ? (Number(body.department_id) || null) : current.department_id,
+            body.description !== undefined ? asText(body.description, 300) : current.description, active, id);
+      } else {
+        db.prepare('UPDATE departments SET name = ?, description = ?, active = ? WHERE id = ?')
+          .run(name, body.description !== undefined ? asText(body.description, 300) : current.description, active, id);
+      }
+      return sendJson(res, 200, { data: db.prepare(`SELECT * FROM ${config.table} WHERE id = ?`).get(id) });
+    }
+    if (method === 'DELETE' && id) {
+      const result = db.prepare(`DELETE FROM ${config.table} WHERE id = ?`).run(id);
+      if (!result.changes) throw fail(404, `${config.label} não encontrado`);
+      return sendJson(res, 200, { ok: true });
+    }
+  }
+
+  // --- tarefas ---
+  if (route === '/api/tasks' && method === 'GET') {
+    const context = memberContext(user);
+    const where = user.role === 'admin' ? '' : 'WHERE t.assigned_to = ? OR t.team_id = ? OR t.department_id = ?';
+    const values = user.role === 'admin' ? [] : [user.id, context.team_id || 0, context.department_id || 0];
+    const rows = db.prepare(`
+      SELECT t.*, u.name AS assigned_name, te.name AS team_name, d.name AS department_name, c.name AS creator_name,
+        (SELECT COUNT(*) FROM task_comments tc WHERE tc.task_id = t.id) AS comments
+      FROM tasks t
+      LEFT JOIN users u ON u.id = t.assigned_to
+      LEFT JOIN teams te ON te.id = t.team_id
+      LEFT JOIN departments d ON d.id = t.department_id
+      LEFT JOIN users c ON c.id = t.created_by
+      ${where} ORDER BY t.id DESC LIMIT 300
+    `).all(...values);
+    return sendJson(res, 200, { data: rows });
+  }
+  if (route === '/api/tasks' && method === 'POST') {
+    auth.requireAdmin(req);
+    const body = await readJson(req);
+    const title = asText(body.title, 120);
+    if (title.length < 3) throw fail(400, 'Informe o título da tarefa');
+    const status = ['pendente', 'em_andamento', 'concluida', 'cancelada'].includes(body.status) ? body.status : 'pendente';
+    const priority = ['baixa', 'media', 'alta'].includes(body.priority) ? body.priority : 'media';
+    const result = db.prepare(`INSERT INTO tasks (title, description, assigned_to, team_id, department_id, created_by, status, priority, due_date)
+      VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)`).run(
+      title, asText(body.description, 1000), Number(body.assigned_to) || null, Number(body.team_id) || null,
+      Number(body.department_id) || null, user.id, status, priority, isDate(body.due_date) ? body.due_date : '',
+    );
+    if (body.assigned_to) notifyUser(Number(body.assigned_to), `Nova tarefa: ${title}`);
+    logActivity(req, 'task.create', title);
+    return sendJson(res, 201, { data: db.prepare('SELECT * FROM tasks WHERE id = ?').get(result.lastInsertRowid) });
+  }
+  const taskMatch = /^\/api\/tasks\/(\d+)(?:\/(comments))?$/.exec(route);
+  if (taskMatch) {
+    const id = Number(taskMatch[1]);
+    const task = db.prepare('SELECT * FROM tasks WHERE id = ?').get(id);
+    if (!task) throw fail(404, 'Tarefa não encontrada');
+    const context = memberContext(user);
+    const visible = user.role === 'admin' || task.assigned_to === user.id
+      || (task.team_id && task.team_id === context.team_id)
+      || (task.department_id && task.department_id === context.department_id);
+    if (!visible) throw fail(403, 'Sem acesso a esta tarefa');
+
+    if (taskMatch[2] === 'comments' && method === 'GET') {
+      return sendJson(res, 200, { data: db.prepare(`
+        SELECT c.*, u.name AS user_name FROM task_comments c LEFT JOIN users u ON u.id = c.user_id
+        WHERE c.task_id = ? ORDER BY c.id
+      `).all(id) });
+    }
+    if (taskMatch[2] === 'comments' && method === 'POST') {
+      const body = await readJson(req);
+      const message = asText(body.message, 1000);
+      if (!message) throw fail(400, 'Escreva uma mensagem');
+      db.prepare('INSERT INTO task_comments (task_id, user_id, message) VALUES (?, ?, ?)').run(id, user.id, message);
+      if (task.created_by && task.created_by !== user.id) notifyUser(task.created_by, `Comentário na tarefa "${task.title}"`);
+      if (task.assigned_to && task.assigned_to !== user.id) notifyUser(task.assigned_to, `Comentário na tarefa "${task.title}"`);
+      return sendJson(res, 201, { data: { ok: true } });
+    }
+    if (method === 'PUT') {
+      const body = await readJson(req);
+      if (user.role !== 'admin' && task.assigned_to !== user.id) throw fail(403, 'Você só pode atualizar tarefas atribuídas a você');
+      const status = ['pendente', 'em_andamento', 'concluida', 'cancelada'].includes(body.status) ? body.status : task.status;
+      const priority = user.role === 'admin' && ['baixa', 'media', 'alta'].includes(body.priority) ? body.priority : task.priority;
+      const title = user.role === 'admin' && body.title !== undefined ? asText(body.title, 120) : task.title;
+      db.prepare(`UPDATE tasks SET title = ?, status = ?, priority = ?, updated_at = datetime('now') WHERE id = ?`)
+        .run(title, status, priority, id);
+      if (task.created_by && task.created_by !== user.id && status !== task.status) {
+        notifyUser(task.created_by, `Tarefa "${title}" agora está ${status}`);
+      }
+      return sendJson(res, 200, { data: db.prepare('SELECT * FROM tasks WHERE id = ?').get(id) });
+    }
+    if (method === 'DELETE') {
+      auth.requireAdmin(req);
+      db.prepare('DELETE FROM tasks WHERE id = ?').run(id);
+      return sendJson(res, 200, { ok: true });
+    }
+  }
+
+  // --- chamados por setor ---
+  if (route === '/api/tickets' && method === 'GET') {
+    const context = memberContext(user);
+    const where = user.role === 'admin' ? '' : 'WHERE ti.created_by = ? OR ti.department_id = ? OR ti.assigned_to = ?';
+    const values = user.role === 'admin' ? [] : [user.id, context.department_id || 0, user.id];
+    const rows = db.prepare(`
+      SELECT ti.*, d.name AS department_name, u.name AS assigned_name, c.name AS creator_name,
+        (SELECT COUNT(*) FROM ticket_messages tm WHERE tm.ticket_id = ti.id) AS messages
+      FROM tickets ti
+      LEFT JOIN departments d ON d.id = ti.department_id
+      LEFT JOIN users u ON u.id = ti.assigned_to
+      LEFT JOIN users c ON c.id = ti.created_by
+      ${where} ORDER BY ti.id DESC LIMIT 300
+    `).all(...values);
+    return sendJson(res, 200, { data: rows });
+  }
+  if (route === '/api/tickets' && method === 'POST') {
+    const body = await readJson(req);
+    const title = asText(body.title, 120);
+    if (title.length < 3) throw fail(400, 'Informe o título do chamado');
+    const departmentId = Number(body.department_id) || memberContext(user).department_id || null;
+    const result = db.prepare(`INSERT INTO tickets (title, description, department_id, created_by, assigned_to, priority)
+      VALUES (?, ?, ?, ?, ?, ?)`).run(
+      title, asText(body.description, 1000), departmentId, user.id, Number(body.assigned_to) || null,
+      ['baixa', 'media', 'alta'].includes(body.priority) ? body.priority : 'media',
+    );
+    for (const admin of db.prepare("SELECT id FROM users WHERE role = 'admin' AND active = 1").all()) {
+      notifyUser(admin.id, `Novo chamado: ${title}`);
+    }
+    if (body.assigned_to) notifyUser(Number(body.assigned_to), `Chamado atribuído a você: ${title}`);
+    logActivity(req, 'ticket.create', title);
+    return sendJson(res, 201, { data: db.prepare('SELECT * FROM tickets WHERE id = ?').get(result.lastInsertRowid) });
+  }
+  const ticketMatch = /^\/api\/tickets\/(\d+)(?:\/(messages))?$/.exec(route);
+  if (ticketMatch) {
+    const id = Number(ticketMatch[1]);
+    const ticket = db.prepare('SELECT * FROM tickets WHERE id = ?').get(id);
+    if (!ticket) throw fail(404, 'Chamado não encontrado');
+    const context = memberContext(user);
+    const visible = user.role === 'admin' || ticket.created_by === user.id
+      || ticket.assigned_to === user.id || (ticket.department_id && ticket.department_id === context.department_id);
+    if (!visible) throw fail(403, 'Sem acesso a este chamado');
+
+    if (ticketMatch[2] === 'messages' && method === 'GET') {
+      return sendJson(res, 200, { data: db.prepare(`
+        SELECT tm.*, u.name AS user_name FROM ticket_messages tm LEFT JOIN users u ON u.id = tm.user_id
+        WHERE tm.ticket_id = ? ORDER BY tm.id
+      `).all(id) });
+    }
+    if (ticketMatch[2] === 'messages' && method === 'POST') {
+      const body = await readJson(req);
+      const message = asText(body.message, 1000);
+      if (!message) throw fail(400, 'Escreva uma mensagem');
+      db.prepare('INSERT INTO ticket_messages (ticket_id, user_id, message) VALUES (?, ?, ?)').run(id, user.id, message);
+      if (ticket.created_by && ticket.created_by !== user.id) notifyUser(ticket.created_by, `Resposta no chamado "${ticket.title}"`);
+      if (ticket.assigned_to && ticket.assigned_to !== user.id) notifyUser(ticket.assigned_to, `Resposta no chamado "${ticket.title}"`);
+      return sendJson(res, 201, { data: { ok: true } });
+    }
+    if (method === 'PUT') {
+      auth.requireAdmin(req);
+      const body = await readJson(req);
+      const status = ['aberto', 'em_andamento', 'fechado'].includes(body.status) ? body.status : ticket.status;
+      db.prepare(`UPDATE tickets SET status = ?, assigned_to = ?, updated_at = datetime('now') WHERE id = ?`)
+        .run(status, body.assigned_to !== undefined ? (Number(body.assigned_to) || null) : ticket.assigned_to, id);
+      if (ticket.created_by) notifyUser(ticket.created_by, `Chamado "${ticket.title}" agora está ${status}`);
+      return sendJson(res, 200, { data: db.prepare('SELECT * FROM tickets WHERE id = ?').get(id) });
+    }
   }
 
   if (route === '/api/settings' && method === 'GET') {

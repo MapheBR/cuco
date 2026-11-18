@@ -202,3 +202,16 @@ Não pivotar. Melhorias restantes, em ordem:
 **Reposicionamento recomendado**: deixar de vender "software de escala" (commodity, grátis até 10 funcionários) e vender **"prova defensável da jornada"** para PMEs que já pagam advogado/contador. Preço sugerido: freemium até 10 funcionários/1 unidade; Pro R$ 79–129/mês por unidade com dossiê, trocas, notificações e multunidade; On-prem com taxa de setup.
 
 **Efeito esperado nas notas**: Inovação sobe de 8 para **9/10**; Risco permanece 8; Comercial **continua 5 até haver piloto, preço testado e depoimento**. Nenhuma feature sozinha transforma `insufficient data` em evidência de mercado.
+
+## 11. Fluxo de trabalho, convites e organização
+
+Pesquisa de referência: fluxos de convite com código + aprovação explícita (Eventcloud, Gradual, Gevme), hierarquia de papéis com menor privilégio (Gitscrum) e RACI com trilha de auditoria (Bizzabo).
+
+**Implementado:**
+- **Cadastro por convite**: código de 10 caracteres gerado pelo admin, válido por 7 dias; o usuário informa código + dados; a conta nasce inativa; o admin aprova ou recusa o vínculo. Notificações avisam o admin na solicitação e o usuário na aprovação.
+- **Organização**: setores, equipes (por setor) e cargos com nível — integrantes podem ser vinculados aos três.
+- **Tarefas**: criação por pessoa/equipe/setor, prioridade, prazo, status e comentários. Funcionário vê e atualiza apenas tarefas atribuídas a ele, à equipe ou ao setor; admin vê todas.
+- **Chamados por setor**: qualquer usuário abre chamado direcionado a um setor; conversa com mensagens; admin controla status e responsável; notificações para admin e responsável.
+- **Permissões**: admin faz gestão de acesso e estrutura; funcionário acessa dashboard, tarefas, chamados e privacidade. Rotas protegidas no servidor.
+
+**Por que melhora o comercial**: passa a ser uma ferramenta de fluxo de trabalho da empresa inteira (não só escala), aumentando o custo de troca e criando motivos para o plano Pro (múltiplos setores, equipes e chamados). A adoção — maior risco apontado pelo avaliador de mercado — é atacada diretamente.

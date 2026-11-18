@@ -1,6 +1,6 @@
-import { store } from '../store.js?v=18';
-import { api } from '../api.js?v=18';
-import { esc, emptyState, toast } from '../ui.js?v=18';
+import { store } from '../store.js?v=19';
+import { api } from '../api.js?v=19';
+import { esc, emptyState, toast } from '../ui.js?v=19';
 
 const LABELS = { pendente: 'troca', aprovado: 'confirmado', recusado: 'falta' };
 

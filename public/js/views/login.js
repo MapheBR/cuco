@@ -1,4 +1,4 @@
-import { api } from '../api.js?v=18';
+import { api } from '../api.js?v=19';
 
 let mounted = false;
 let successCallback = null;
