@@ -1,4 +1,4 @@
-import { store } from '../store.js?v=19';
+import { store } from '../store.js?v=20';
 
 const SECTIONS = [
   {

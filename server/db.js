@@ -29,7 +29,43 @@ db.exec(`
     id INTEGER PRIMARY KEY AUTOINCREMENT,
     name TEXT NOT NULL UNIQUE,
     description TEXT NOT NULL DEFAULT '',
+    responsible_user_id INTEGER REFERENCES users(id) ON DELETE SET NULL,
     active INTEGER NOT NULL DEFAULT 1,
+    created_at TEXT NOT NULL DEFAULT (datetime('now'))
+  );
+
+  CREATE TABLE IF NOT EXISTS zones (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    name TEXT NOT NULL,
+    description TEXT NOT NULL DEFAULT '',
+    color TEXT NOT NULL DEFAULT '#1E8A4C',
+    x INTEGER NOT NULL DEFAULT 10,
+    y INTEGER NOT NULL DEFAULT 10,
+    w INTEGER NOT NULL DEFAULT 180,
+    h INTEGER NOT NULL DEFAULT 120,
+    active INTEGER NOT NULL DEFAULT 1,
+    created_at TEXT NOT NULL DEFAULT (datetime('now'))
+  );
+
+  CREATE TABLE IF NOT EXISTS zone_flows (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    from_zone INTEGER NOT NULL REFERENCES zones(id) ON DELETE CASCADE,
+    to_zone INTEGER NOT NULL REFERENCES zones(id) ON DELETE CASCADE,
+    label TEXT NOT NULL DEFAULT ''
+  );
+
+  CREATE TABLE IF NOT EXISTS employee_locations (
+    user_id INTEGER PRIMARY KEY REFERENCES users(id) ON DELETE CASCADE,
+    zone_id INTEGER REFERENCES zones(id) ON DELETE SET NULL,
+    note TEXT NOT NULL DEFAULT '',
+    updated_at TEXT NOT NULL DEFAULT (datetime('now'))
+  );
+
+  CREATE TABLE IF NOT EXISTS ticket_calls (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    ticket_id INTEGER NOT NULL REFERENCES tickets(id) ON DELETE CASCADE,
+    user_id INTEGER NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+    status TEXT NOT NULL DEFAULT 'pendente',
     created_at TEXT NOT NULL DEFAULT (datetime('now'))
   );
 
@@ -190,6 +226,8 @@ function migrate() {
   const userColumns = db.prepare('PRAGMA table_info(users)').all().map((column) => column.name);
   if (!userColumns.includes('member_id')) db.exec('ALTER TABLE users ADD COLUMN member_id INTEGER REFERENCES members(id) ON DELETE SET NULL');
   if (!userColumns.includes('token_version')) db.exec("ALTER TABLE users ADD COLUMN token_version INTEGER NOT NULL DEFAULT 0");
+  const departmentColumns = db.prepare('PRAGMA table_info(departments)').all().map((column) => column.name);
+  if (!departmentColumns.includes('responsible_user_id')) db.exec('ALTER TABLE departments ADD COLUMN responsible_user_id INTEGER REFERENCES users(id) ON DELETE SET NULL');
   const logColumns = db.prepare('PRAGMA table_info(activity_log)').all().map((column) => column.name);
   if (!logColumns.includes('ip')) db.exec("ALTER TABLE activity_log ADD COLUMN ip TEXT NOT NULL DEFAULT ''");
   if (!logColumns.includes('user_agent')) db.exec("ALTER TABLE activity_log ADD COLUMN user_agent TEXT NOT NULL DEFAULT ''");
@@ -226,6 +264,7 @@ function seedSettings() {
   const insert = db.prepare('INSERT OR IGNORE INTO settings (key, value) VALUES (?, ?)');
   insert.run('company_name', 'Minha Empresa');
   insert.run('contact_email', 'contato@cuco.local');
+  insert.run('company_address', '');
   insert.run('default_start', '08:00');
   insert.run('default_end', '16:00');
   insert.run('alert_days', '3');

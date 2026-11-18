@@ -1,21 +1,22 @@
-import { store, loadMembers, loadUsers, loadAudit, loadCompliance, loadSwaps, loadNotifications, loadMyShifts, loadSummary, loadSettings, loadShifts, loadFlow, loadInvitations } from './store.js?v=19';
-import { api } from './api.js?v=19';
-import { mascotSvg, initMascotInteractions } from './mascot.js?v=19';
-import { loadingState, errorState, toast, confetti, modal, closeModal, photoField, bindPhotoField, confirmDelete, esc } from './ui.js?v=19';
-import { mountLogin } from './views/login.js?v=19';
-import * as dashboard from './views/dashboard.js?v=19';
-import * as shifts from './views/shifts.js?v=19';
-import * as team from './views/team.js?v=19';
-import * as users from './views/users.js?v=19';
-import * as audit from './views/audit.js?v=19';
-import * as compliance from './views/compliance.js?v=19';
-import * as settings from './views/settings.js?v=19';
-import * as privacy from './views/privacy.js?v=19';
-import * as swaps from './views/swaps.js?v=19';
-import * as organization from './views/organization.js?v=19';
-import * as tasks from './views/tasks.js?v=19';
-import * as tickets from './views/tickets.js?v=19';
-import * as invitations from './views/invitations.js?v=19';
+import { store, loadMembers, loadUsers, loadAudit, loadCompliance, loadSwaps, loadNotifications, loadMyShifts, loadSummary, loadSettings, loadShifts, loadFlow, loadInvitations } from './store.js?v=20';
+import { api } from './api.js?v=20';
+import { mascotSvg, initMascotInteractions } from './mascot.js?v=20';
+import { loadingState, errorState, toast, confetti, modal, closeModal, photoField, bindPhotoField, confirmDelete, esc } from './ui.js?v=20';
+import { mountLogin } from './views/login.js?v=20';
+import * as dashboard from './views/dashboard.js?v=20';
+import * as shifts from './views/shifts.js?v=20';
+import * as team from './views/team.js?v=20';
+import * as users from './views/users.js?v=20';
+import * as audit from './views/audit.js?v=20';
+import * as compliance from './views/compliance.js?v=20';
+import * as settings from './views/settings.js?v=20';
+import * as privacy from './views/privacy.js?v=20';
+import * as swaps from './views/swaps.js?v=20';
+import * as organization from './views/organization.js?v=20';
+import * as tasks from './views/tasks.js?v=20';
+import * as tickets from './views/tickets.js?v=20';
+import * as invitations from './views/invitations.js?v=20';
+import * as map from './views/map.js?v=20';
 
 const VIEWS = {
   dashboard: { module: dashboard, title: 'Visão geral', eyebrow: 'PAINEL' },
@@ -31,6 +32,7 @@ const VIEWS = {
   tasks: { module: tasks, title: 'Tarefas', eyebrow: 'FLUXO' },
   tickets: { module: tickets, title: 'Chamados', eyebrow: 'FLUXO' },
   invitations: { module: invitations, title: 'Convites', eyebrow: 'ACESSO' },
+  map: { module: map, title: 'Mapa', eyebrow: 'LOCAL' },
 };
 
 if ('serviceWorker' in navigator) navigator.serviceWorker.register('/sw.js').catch(() => {});
@@ -47,7 +49,7 @@ function updateHeader() {
   document.getElementById('eyebrow').textContent = VIEWS[store.view].eyebrow;
   const isAdmin = store.user?.role === 'admin';
   document.querySelectorAll('.nav-item').forEach((item) => {
-    const allowed = isAdmin || ['dashboard', 'privacy', 'tasks', 'tickets'].includes(item.dataset.view);
+    const allowed = isAdmin || ['dashboard', 'privacy', 'tasks', 'tickets', 'map'].includes(item.dataset.view);
     item.classList.toggle('hidden', !allowed);
     item.classList.toggle('active', item.dataset.view === store.view);
   });
@@ -73,18 +75,18 @@ async function loadViewData() {
   else if (store.view === 'users') await Promise.all([loadUsers(), loadMembers()]);
   else if (store.view === 'audit') await loadAudit();
   else if (store.view === 'swaps') await loadSwaps();
-  else if (store.view === 'organization') await Promise.all([loadFlow(), loadMembers()]);
+  else if (store.view === 'organization') await Promise.all([loadFlow(), loadMembers(), loadUsers()]);
   else if (store.view === 'tasks') {
     await loadFlow();
     if (store.user.role === 'admin') await loadUsers();
-  } else if (store.view === 'tickets') await loadFlow();
+  } else if (store.view === 'tickets' || store.view === 'map') await loadFlow();
   else if (store.view === 'invitations') await Promise.all([loadInvitations(), loadFlow(), loadMembers()]);
   else if (store.view === 'compliance') await loadCompliance();
 }
 
 async function refresh() {
   if (!store.user) return showLogin();
-  if (store.user.role !== 'admin' && !['dashboard', 'privacy', 'tasks', 'tickets'].includes(store.view)) store.view = 'dashboard';
+  if (store.user.role !== 'admin' && !['dashboard', 'privacy', 'tasks', 'tickets', 'map'].includes(store.view)) store.view = 'dashboard';
   const current = VIEWS[store.view];
   updateHeader();
   viewRoot.innerHTML = loadingState();
@@ -105,7 +107,7 @@ async function refresh() {
 
 function go(view) {
   if (!VIEWS[view] || !store.user) return;
-  if (store.user.role !== 'admin' && !['dashboard', 'privacy', 'tasks', 'tickets'].includes(view)) {
+  if (store.user.role !== 'admin' && !['dashboard', 'privacy', 'tasks', 'tickets', 'map'].includes(view)) {
     toast('Seu perfil tem acesso apenas ao painel', 'error');
     return;
   }
@@ -210,7 +212,7 @@ async function enterApp() {
   updateUserChip();
   const initial = window.location.hash.slice(1);
   store.view = VIEWS[initial] ? initial : 'dashboard';
-  if (store.user.role !== 'admin' && !['dashboard', 'privacy', 'tasks', 'tickets'].includes(store.view)) store.view = 'dashboard';
+  if (store.user.role !== 'admin' && !['dashboard', 'privacy', 'tasks', 'tickets', 'map'].includes(store.view)) store.view = 'dashboard';
   await refresh();
 }
 

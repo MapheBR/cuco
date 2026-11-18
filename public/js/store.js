@@ -1,4 +1,4 @@
-import { api } from './api.js?v=19';
+import { api } from './api.js?v=20';
 
 export const store = {
   view: 'dashboard',
@@ -19,6 +19,9 @@ export const store = {
   positions: [],
   tasks: [],
   tickets: [],
+  zones: [],
+  zoneFlows: [],
+  locations: [],
   auditFilters: { q: '', limit: '100' },
   myShifts: { shifts: [], stats: {} },
   summary: null,
@@ -57,15 +60,20 @@ export async function loadNotifications() {
 }
 
 export async function loadFlow() {
-  const [departments, teams, positions, tasks, tickets] = await Promise.all([
+  const [departments, teams, positions, tasks, tickets, zones, zoneFlows, locations, users] = await Promise.all([
     api.get('/api/departments'), api.get('/api/teams'), api.get('/api/positions'),
-    api.get('/api/tasks'), api.get('/api/tickets'),
+    api.get('/api/tasks'), api.get('/api/tickets'), api.get('/api/zones'),
+    api.get('/api/zone-flows'), api.get('/api/locations'), api.get('/api/user-options'),
   ]);
   store.departments = departments;
   store.teams = teams;
   store.positions = positions;
   store.tasks = tasks;
   store.tickets = tickets;
+  store.zones = zones;
+  store.zoneFlows = zoneFlows;
+  store.locations = locations;
+  if (store.user?.role !== 'admin' || !store.users.length) store.users = users;
 }
 
 export async function loadInvitations() {

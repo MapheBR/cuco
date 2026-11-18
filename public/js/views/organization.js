@@ -1,6 +1,6 @@
-import { store } from '../store.js?v=19';
-import { api } from '../api.js?v=19';
-import { esc, toast, confirmDelete, emptyState } from '../ui.js?v=19';
+import { store } from '../store.js?v=20';
+import { api } from '../api.js?v=20';
+import { esc, toast, confirmDelete, emptyState } from '../ui.js?v=20';
 
 function list(rows, kind, label) {
   if (!rows.length) return emptyState(`Nenhum ${label.toLowerCase()}`, `Cadastre o primeiro ${label.toLowerCase()} acima.`);
@@ -17,8 +17,13 @@ export function render() {
         <form id="department-form" class="form-grid">
           <div class="field full"><label>Nome</label><input name="name" required minlength="2" placeholder="Ex.: Operações"></div>
           <div class="field full"><label>Descrição</label><input name="description" placeholder="Opcional"></div>
+          <div class="field full"><label>Responsável pelo setor</label><select name="responsible_user_id"><option value="">Nenhum</option>
+            ${(store.users || []).map((u) => `<option value="${u.id}">${esc(u.name)}</option>`).join('')}</select></div>
           <div class="field full form-actions"><button class="btn btn-primary" type="submit">Adicionar setor</button></div>
-        </form>${list(store.departments, 'department', 'Setor')}</div>
+        </form>${list(store.departments.map((d) => ({
+          ...d, description: [d.description, (store.users || []).find((u) => u.id === d.responsible_user_id)?.name]
+            .filter(Boolean).join(' · Responsável: '),
+        })), 'department', 'Setor')}</div>
       <div class="card"><div class="card-head"><div><h2>Cargos</h2><p>Separação de funções e níveis</p></div></div>
         <form id="position-form" class="form-grid">
           <div class="field"><label>Nome</label><input name="name" required minlength="2" placeholder="Ex.: Supervisor"></div>

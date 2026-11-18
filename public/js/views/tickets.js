@@ -1,6 +1,6 @@
-import { store } from '../store.js?v=19';
-import { api } from '../api.js?v=19';
-import { esc, emptyState, toast, modal, closeModal } from '../ui.js?v=19';
+import { store } from '../store.js?v=20';
+import { api } from '../api.js?v=20';
+import { esc, emptyState, toast, modal, closeModal } from '../ui.js?v=20';
 
 const LABEL = { aberto: 'Aberto', em_andamento: 'Em andamento', fechado: 'Fechado' };
 const BADGE = { aberto: 'planejado', em_andamento: 'troca', fechado: 'confirmado' };
@@ -24,8 +24,17 @@ function table() {
 
 async function openThread(id) {
   try {
-    const rows = await api.get(`/api/tickets/${id}/messages`);
-    modal('Conversa do chamado', `<div class="mini-list">${rows.length
+    const [rows, calls] = await Promise.all([
+      api.get(`/api/tickets/${id}/messages`), api.get(`/api/tickets/${id}/calls`),
+    ]);
+    modal('Conversa do chamado', `<h3>Pessoas chamadas</h3><div class="mini-list">${calls.length
+      ? calls.map((call) => `<div class="mini-item"><div class="flex-1"><strong>${esc(call.user_name)}</strong>
+          <small>${esc(call.status)}</small></div>
+          ${call.user_id === store.user.id && call.status === 'pendente' ? `<div class="actions">
+            <button class="btn btn-ghost btn-sm" data-call-accept="${call.id}" type="button">Aceitar</button>
+            <button class="btn btn-outline btn-sm" data-call-reject="${call.id}" type="button">Recusar</button></div>` : ''}</div>`).join('')
+      : '<p class="small muted">Ninguém foi chamado especificamente.</p>'}</div>
+      <h3 style="margin-top:16px">Mensagens</h3><div class="mini-list">${rows.length
       ? rows.map((row) => `<div class="mini-item"><div class="flex-1"><strong>${esc(row.user_name || 'Usuário')}</strong>
           <small>${esc(row.message)}</small></div></div>`).join('')
       : '<p class="small muted">Nenhuma mensagem ainda.</p>'}</div>
@@ -43,6 +52,16 @@ async function openThread(id) {
         window.dispatchEvent(new CustomEvent('cuco:refresh'));
       } catch (error) { toast(error.message, 'error'); }
     });
+    const answer = (callId, status) => async () => {
+      try {
+        await api.put(`/api/tickets/${id}/calls/${callId}`, { status });
+        closeModal();
+        toast(status === 'aceito' ? 'Chamada aceita' : 'Chamada recusada');
+        window.dispatchEvent(new CustomEvent('cuco:refresh'));
+      } catch (error) { toast(error.message, 'error'); }
+    };
+    document.querySelectorAll('[data-call-accept]').forEach((button) => button.addEventListener('click', answer(button.dataset.callAccept, 'aceito')));
+    document.querySelectorAll('[data-call-reject]').forEach((button) => button.addEventListener('click', answer(button.dataset.callReject, 'recusado')));
   } catch (error) { toast(error.message, 'error'); }
 }
 
@@ -52,8 +71,12 @@ export function render() {
       <form id="ticket-form" class="form-grid">
         <div class="field full"><label>Título</label><input name="title" required minlength="3"></div>
         <div class="field full"><label>Descrição</label><textarea name="description"></textarea></div>
-        <div class="field"><label>Setor</label><select name="department_id"><option value="">Geral</option>
-          ${store.departments.map((d) => `<option value="${d.id}">${esc(d.name)}</option>`).join('')}</select></div>
+        <div class="field"><label>Setor</label><select name="department_id" id="ticket-department"><option value="">Geral</option>
+          ${store.departments.map((d) => `<option value="${d.id}" data-desc="${esc(d.description)}">${esc(d.name)}</option>`).join('')}</select></div>
+        <div class="field full"><p class="form-note" id="ticket-sector-hint">Selecione um setor para ver a descrição.</p></div>
+        <div class="field full"><label>Chamar pessoas específicas</label>
+          <div class="row">${store.users.filter((u) => u.id !== store.user.id).map((u) => `<label class="badge badge-planejado" style="cursor:pointer">
+            <input type="checkbox" name="user_ids" value="${u.id}" style="margin:0 6px 0 2px"> ${esc(u.name)}</label>`).join('') || '<span class="small muted">Nenhum outro usuário cadastrado.</span>'}</div></div>
         <div class="field"><label>Prioridade</label><select name="priority">
           <option value="baixa">Baixa</option><option value="media" selected>Média</option><option value="alta">Alta</option></select></div>
         <div class="field full form-actions"><button class="btn btn-primary" type="submit">Abrir chamado</button></div>
@@ -63,10 +86,21 @@ export function render() {
 }
 
 export function mount() {
+  const departmentSelect = document.getElementById('ticket-department');
+  const hint = document.getElementById('ticket-sector-hint');
+  const updateHint = () => {
+    const option = departmentSelect.selectedOptions[0];
+    hint.textContent = option?.dataset.desc ? option.dataset.desc : 'Selecione um setor para ver a descrição.';
+  };
+  departmentSelect.addEventListener('change', updateHint);
+  updateHint();
+
   document.getElementById('ticket-form').addEventListener('submit', async (event) => {
     event.preventDefault();
+    const data = Object.fromEntries(new FormData(event.currentTarget));
+    data.user_ids = [...event.currentTarget.querySelectorAll('[name="user_ids"]:checked')].map((input) => Number(input.value));
     try {
-      await api.post('/api/tickets', Object.fromEntries(new FormData(event.currentTarget)));
+      await api.post('/api/tickets', data);
       toast('Chamado aberto');
       window.dispatchEvent(new CustomEvent('cuco:refresh'));
     } catch (error) { toast(error.message, 'error'); }

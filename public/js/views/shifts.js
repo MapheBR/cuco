@@ -1,6 +1,6 @@
-import { store } from '../store.js?v=19';
-import { api } from '../api.js?v=19';
-import { esc, statusBadge, person, formatDate, toast, confirmDelete, emptyState, memberOptions, statusOptions, modal, closeModal } from '../ui.js?v=19';
+import { store } from '../store.js?v=20';
+import { api } from '../api.js?v=20';
+import { esc, statusBadge, person, formatDate, toast, confirmDelete, emptyState, memberOptions, statusOptions, modal, closeModal } from '../ui.js?v=20';
 
 function todayISO() {
   const now = new Date();

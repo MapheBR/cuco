@@ -215,3 +215,11 @@ Pesquisa de referência: fluxos de convite com código + aprovação explícita 
 - **Permissões**: admin faz gestão de acesso e estrutura; funcionário acessa dashboard, tarefas, chamados e privacidade. Rotas protegidas no servidor.
 
 **Por que melhora o comercial**: passa a ser uma ferramenta de fluxo de trabalho da empresa inteira (não só escala), aumentando o custo de troca e criando motivos para o plano Pro (múltiplos setores, equipes e chamados). A adoção — maior risco apontado pelo avaliador de mercado — é atacada diretamente.
+
+## 12. Mapa do local e chamados direcionados
+
+- **Mapa**: zonas editáveis em SVG (arraste para reposicionar), fluxos entre áreas com setas, presença por pessoa ("Onde você está") e distribuição por área. Layout padrão criado com Vendas, Estoque, RMA, Supermercado, Garagem e Ponto; o endereço da empresa passa a ficar nas configurações e aparece no mapa.
+- **Chamados evoluídos**: seleção de setor com descrição, responsável do setor (atribuição automática) e chamada a pessoas específicas com aceite/recusa e notificações.
+- **Privacidade**: a localização é preenchida pela própria pessoa dentro do layout da empresa — sem GPS ou rastreamento de celular, evitando dados sensíveis e mantendo a base legal da LGPD.
+
+Isso transforma o mapa em uma ferramenta de distribuição de trabalho: o gestor vê onde cada pessoa está e para onde o fluxo vai, sem recorrer a mensagens informais.

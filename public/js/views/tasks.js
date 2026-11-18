@@ -1,6 +1,6 @@
-import { store } from '../store.js?v=19';
-import { api } from '../api.js?v=19';
-import { esc, emptyState, toast, modal, closeModal, confirmDelete } from '../ui.js?v=19';
+import { store } from '../store.js?v=20';
+import { api } from '../api.js?v=20';
+import { esc, emptyState, toast, modal, closeModal, confirmDelete } from '../ui.js?v=20';
 
 const LABEL = { pendente: 'Pendente', em_andamento: 'Em andamento', concluida: 'Concluída', cancelada: 'Cancelada' };
 

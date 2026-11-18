@@ -498,9 +498,10 @@ async function handleApi(req, res, url) {
     || (route === '/api/notifications' && method === 'GET')
     || (/^\/api\/notifications\/\d+\/read$/.test(route) && method === 'PUT')
     || (/^\/api\/my-shifts\/\d+\/confirm$/.test(route) && method === 'PUT')
-    || (['/api/departments', '/api/teams', '/api/positions', '/api/tasks', '/api/tickets'].includes(route) && ['GET', 'POST'].includes(method))
+    || (['/api/departments', '/api/teams', '/api/positions', '/api/tasks', '/api/tickets', '/api/zones', '/api/zone-flows', '/api/locations', '/api/user-options'].includes(route) && ['GET', 'POST'].includes(method))
+    || (route === '/api/locations/me' && method === 'PUT')
     || (/^\/api\/tasks\/\d+(\/comments)?$/.test(route) && ['GET', 'PUT', 'POST'].includes(method))
-    || (/^\/api\/tickets\/\d+(\/messages)?$/.test(route) && ['GET', 'PUT', 'POST'].includes(method));
+    || (/^\/api\/tickets\/\d+(\/(messages|calls))?(\/\d+)?$/.test(route) && ['GET', 'PUT', 'POST'].includes(method));
   if (user.role !== 'admin' && !employeeAllowed) throw fail(403, 'Área restrita a administradores');
 
   if (route === '/api/upload' && method === 'POST') {
@@ -812,6 +813,9 @@ async function handleApi(req, res, url) {
   if (route === '/api/team-options' && method === 'GET') {
     return sendJson(res, 200, { data: db.prepare('SELECT id, name FROM members WHERE active = 1 ORDER BY name').all() });
   }
+  if (route === '/api/user-options' && method === 'GET') {
+    return sendJson(res, 200, { data: db.prepare('SELECT id, name, role FROM users WHERE active = 1 ORDER BY name').all() });
+  }
 
   // --- troca de turnos ---
   const swapMatch = /^\/api\/shifts\/(\d+)\/swap$/.exec(route);
@@ -942,7 +946,8 @@ async function handleApi(req, res, url) {
         ? db.prepare('INSERT INTO positions (name, description, level) VALUES (?, ?, ?)').run(name, asText(body.description, 300), Math.max(1, Number(body.level) || 1))
         : config.table === 'teams'
           ? db.prepare('INSERT INTO teams (name, department_id, description) VALUES (?, ?, ?)').run(name, Number(body.department_id) || null, asText(body.description, 300))
-          : db.prepare('INSERT INTO departments (name, description) VALUES (?, ?)').run(name, asText(body.description, 300));
+          : db.prepare('INSERT INTO departments (name, description, responsible_user_id) VALUES (?, ?, ?)')
+            .run(name, asText(body.description, 300), Number(body.responsible_user_id) || null);
       logActivity(req, `${config.table}.create`, name);
       return sendJson(res, 201, { data: db.prepare(`SELECT * FROM ${config.table} WHERE id = ?`).get(result.lastInsertRowid) });
     }
@@ -962,8 +967,9 @@ async function handleApi(req, res, url) {
           .run(name, body.department_id !== undefined ? (Number(body.department_id) || null) : current.department_id,
             body.description !== undefined ? asText(body.description, 300) : current.description, active, id);
       } else {
-        db.prepare('UPDATE departments SET name = ?, description = ?, active = ? WHERE id = ?')
-          .run(name, body.description !== undefined ? asText(body.description, 300) : current.description, active, id);
+        db.prepare('UPDATE departments SET name = ?, description = ?, active = ?, responsible_user_id = ? WHERE id = ?')
+          .run(name, body.description !== undefined ? asText(body.description, 300) : current.description, active,
+            body.responsible_user_id !== undefined ? (Number(body.responsible_user_id) || null) : (current.responsible_user_id || null), id);
       }
       return sendJson(res, 200, { data: db.prepare(`SELECT * FROM ${config.table} WHERE id = ?`).get(id) });
     }
@@ -1056,8 +1062,9 @@ async function handleApi(req, res, url) {
   // --- chamados por setor ---
   if (route === '/api/tickets' && method === 'GET') {
     const context = memberContext(user);
-    const where = user.role === 'admin' ? '' : 'WHERE ti.created_by = ? OR ti.department_id = ? OR ti.assigned_to = ?';
-    const values = user.role === 'admin' ? [] : [user.id, context.department_id || 0, user.id];
+    const where = user.role === 'admin' ? ''
+      : 'WHERE ti.created_by = ? OR ti.department_id = ? OR ti.assigned_to = ? OR EXISTS (SELECT 1 FROM ticket_calls tc WHERE tc.ticket_id = ti.id AND tc.user_id = ?)';
+    const values = user.role === 'admin' ? [] : [user.id, context.department_id || 0, user.id, user.id];
     const rows = db.prepare(`
       SELECT ti.*, d.name AS department_name, u.name AS assigned_name, c.name AS creator_name,
         (SELECT COUNT(*) FROM ticket_messages tm WHERE tm.ticket_id = ti.id) AS messages
@@ -1074,25 +1081,34 @@ async function handleApi(req, res, url) {
     const title = asText(body.title, 120);
     if (title.length < 3) throw fail(400, 'Informe o título do chamado');
     const departmentId = Number(body.department_id) || memberContext(user).department_id || null;
+    const responsible = departmentId ? db.prepare('SELECT responsible_user_id FROM departments WHERE id = ?').get(departmentId)?.responsible_user_id : null;
+    const assignedTo = Number(body.assigned_to) || responsible || null;
     const result = db.prepare(`INSERT INTO tickets (title, description, department_id, created_by, assigned_to, priority)
       VALUES (?, ?, ?, ?, ?, ?)`).run(
-      title, asText(body.description, 1000), departmentId, user.id, Number(body.assigned_to) || null,
+      title, asText(body.description, 1000), departmentId, user.id, assignedTo,
       ['baixa', 'media', 'alta'].includes(body.priority) ? body.priority : 'media',
     );
+    const ticketId = Number(result.lastInsertRowid);
     for (const admin of db.prepare("SELECT id FROM users WHERE role = 'admin' AND active = 1").all()) {
       notifyUser(admin.id, `Novo chamado: ${title}`);
     }
-    if (body.assigned_to) notifyUser(Number(body.assigned_to), `Chamado atribuído a você: ${title}`);
+    if (assignedTo) notifyUser(assignedTo, `Chamado atribuído a você: ${title}`);
+    const called = Array.isArray(body.user_ids) ? [...new Set(body.user_ids.map(Number).filter(Boolean))] : [];
+    for (const userId of called) {
+      db.prepare('INSERT INTO ticket_calls (ticket_id, user_id) VALUES (?, ?)').run(ticketId, userId);
+      notifyUser(userId, `${user.name} chamou você no chamado "${title}"`);
+    }
     logActivity(req, 'ticket.create', title);
     return sendJson(res, 201, { data: db.prepare('SELECT * FROM tickets WHERE id = ?').get(result.lastInsertRowid) });
   }
-  const ticketMatch = /^\/api\/tickets\/(\d+)(?:\/(messages))?$/.exec(route);
+  const ticketMatch = /^\/api\/tickets\/(\d+)(?:\/(messages|calls))?(?:\/(\d+))?$/.exec(route);
   if (ticketMatch) {
     const id = Number(ticketMatch[1]);
     const ticket = db.prepare('SELECT * FROM tickets WHERE id = ?').get(id);
     if (!ticket) throw fail(404, 'Chamado não encontrado');
     const context = memberContext(user);
-    const visible = user.role === 'admin' || ticket.created_by === user.id
+    const called = db.prepare('SELECT 1 FROM ticket_calls WHERE ticket_id = ? AND user_id = ?').get(id, user.id);
+    const visible = user.role === 'admin' || ticket.created_by === user.id || called
       || ticket.assigned_to === user.id || (ticket.department_id && ticket.department_id === context.department_id);
     if (!visible) throw fail(403, 'Sem acesso a este chamado');
 
@@ -1111,6 +1127,33 @@ async function handleApi(req, res, url) {
       if (ticket.assigned_to && ticket.assigned_to !== user.id) notifyUser(ticket.assigned_to, `Resposta no chamado "${ticket.title}"`);
       return sendJson(res, 201, { data: { ok: true } });
     }
+    if (ticketMatch[2] === 'calls' && method === 'GET') {
+      return sendJson(res, 200, { data: db.prepare(`
+        SELECT tc.*, u.name AS user_name, u.photo FROM ticket_calls tc LEFT JOIN users u ON u.id = tc.user_id
+        WHERE tc.ticket_id = ? ORDER BY tc.id
+      `).all(id) });
+    }
+    if (ticketMatch[2] === 'calls' && method === 'POST') {
+      const body = await readJson(req);
+      const ids = Array.isArray(body.user_ids) ? [...new Set(body.user_ids.map(Number).filter(Boolean))] : [];
+      for (const userId of ids) {
+        db.prepare('INSERT OR IGNORE INTO ticket_calls (ticket_id, user_id) VALUES (?, ?)').run(id, userId);
+        notifyUser(userId, `${user.name} chamou você no chamado "${ticket.title}"`);
+      }
+      return sendJson(res, 201, { data: { ok: true } });
+    }
+    if (ticketMatch[2] === 'calls' && ticketMatch[3] && method === 'PUT') {
+      const callId = Number(ticketMatch[3]);
+      const call = db.prepare('SELECT * FROM ticket_calls WHERE id = ? AND ticket_id = ?').get(callId, id);
+      if (!call) throw fail(404, 'Chamada não encontrada');
+      if (call.user_id !== user.id && user.role !== 'admin') throw fail(403, 'Você não foi chamado');
+      const body = await readJson(req);
+      if (!['aceito', 'recusado'].includes(body.status)) throw fail(400, 'Status inválido');
+      db.prepare('UPDATE ticket_calls SET status = ? WHERE id = ?').run(body.status, callId);
+      if (user.role === 'admin') notifyUser(call.user_id, `Chamada no chamado "${ticket.title}": ${body.status}`);
+      else notifyUser(ticket.created_by, `${user.name} ${body.status === 'aceito' ? 'aceitou' : 'recusou'} a chamada no chamado "${ticket.title}"`);
+      return sendJson(res, 200, { data: { id: callId, status: body.status } });
+    }
     if (method === 'PUT') {
       auth.requireAdmin(req);
       const body = await readJson(req);
@@ -1122,6 +1165,109 @@ async function handleApi(req, res, url) {
     }
   }
 
+  // --- mapa do local de trabalho ---
+  if (route === '/api/zones' && method === 'GET') {
+    return sendJson(res, 200, { data: db.prepare('SELECT * FROM zones WHERE active = 1 ORDER BY id').all() });
+  }
+  if (route === '/api/zones' && method === 'POST') {
+    auth.requireAdmin(req);
+    const body = await readJson(req);
+    const name = asText(body.name, 80);
+    if (name.length < 2) throw fail(400, 'Informe o nome da zona');
+    const result = db.prepare('INSERT INTO zones (name, description, color, x, y, w, h) VALUES (?, ?, ?, ?, ?, ?, ?)')
+      .run(name, asText(body.description, 300), /^#[0-9A-Fa-f]{6}$/.test(body.color) ? body.color : '#1E8A4C',
+        Math.max(0, Math.min(900, Number(body.x) || 0)), Math.max(0, Math.min(520, Number(body.y) || 0)),
+        Math.max(60, Math.min(500, Number(body.w) || 160)), Math.max(50, Math.min(400, Number(body.h) || 110)));
+    logActivity(req, 'zone.create', name);
+    return sendJson(res, 201, { data: db.prepare('SELECT * FROM zones WHERE id = ?').get(result.lastInsertRowid) });
+  }
+  const zoneMatch = /^\/api\/zones\/(\d+)$/.exec(route);
+  if (zoneMatch) {
+    if (method === 'PUT') {
+      auth.requireAdmin(req);
+      const current = db.prepare('SELECT * FROM zones WHERE id = ?').get(Number(zoneMatch[1]));
+      if (!current) throw fail(404, 'Zona não encontrada');
+      const body = await readJson(req);
+      const value = (field, min, max, fallback) => Math.max(min, Math.min(max, Number(body[field]) || fallback));
+      db.prepare('UPDATE zones SET name = ?, description = ?, color = ?, x = ?, y = ?, w = ?, h = ?, active = ? WHERE id = ?')
+        .run(body.name !== undefined ? asText(body.name, 80) : current.name,
+          body.description !== undefined ? asText(body.description, 300) : current.description,
+          body.color !== undefined && /^#[0-9A-Fa-f]{6}$/.test(body.color) ? body.color : current.color,
+          value('x', 0, 900, current.x), value('y', 0, 520, current.y),
+          value('w', 60, 500, current.w), value('h', 50, 400, current.h),
+          body.active === undefined ? current.active : (body.active ? 1 : 0), current.id);
+      return sendJson(res, 200, { data: db.prepare('SELECT * FROM zones WHERE id = ?').get(current.id) });
+    }
+    if (method === 'DELETE') {
+      auth.requireAdmin(req);
+      db.prepare('DELETE FROM zones WHERE id = ?').run(Number(zoneMatch[1]));
+      return sendJson(res, 200, { ok: true });
+    }
+  }
+  if (route === '/api/zones/default' && method === 'POST') {
+    auth.requireAdmin(req);
+    if (db.prepare('SELECT COUNT(*) AS total FROM zones').get().total > 0) throw fail(409, 'Já existe um mapa cadastrado');
+    const defaults = [
+      ['Vendas', '#1E8A4C', 30, 60, 220, 150, 'Área de atendimento e checkout'],
+      ['Estoque', '#2E9E86', 280, 60, 220, 150, 'Recebimento e armazenagem'],
+      ['RMA', '#F2A93B', 540, 60, 180, 150, 'Assistência e devoluções'],
+      ['Supermercado', '#4C7DD6', 30, 250, 300, 170, 'Gôndolas e reposição'],
+      ['Garagem', '#9B6BD6', 370, 250, 180, 170, 'Carga e descarga'],
+      ['Ponto', '#E5694F', 590, 250, 130, 170, 'Registro de jornada'],
+    ];
+    const insert = db.prepare('INSERT INTO zones (name, color, x, y, w, h, description) VALUES (?, ?, ?, ?, ?, ?, ?)');
+    db.exec('BEGIN');
+    for (const zone of defaults) insert.run(...zone);
+    db.exec('COMMIT');
+    logActivity(req, 'zone.default', 'Mapa padrão criado');
+    return sendJson(res, 201, { data: { created: defaults.length } });
+  }
+
+  if (route === '/api/zone-flows' && method === 'GET') {
+    return sendJson(res, 200, { data: db.prepare(`
+      SELECT f.*, a.name AS from_name, b.name AS to_name FROM zone_flows f
+      JOIN zones a ON a.id = f.from_zone JOIN zones b ON b.id = f.to_zone ORDER BY f.id
+    `).all() });
+  }
+  if (route === '/api/zone-flows' && method === 'POST') {
+    auth.requireAdmin(req);
+    const body = await readJson(req);
+    const from = Number(body.from_zone);
+    const to = Number(body.to_zone);
+    if (from === to || !db.prepare('SELECT 1 FROM zones WHERE id = ?').get(from) || !db.prepare('SELECT 1 FROM zones WHERE id = ?').get(to)) {
+      throw fail(400, 'Fluxo inválido');
+    }
+    const result = db.prepare('INSERT INTO zone_flows (from_zone, to_zone, label) VALUES (?, ?, ?)')
+      .run(from, to, asText(body.label, 80));
+    return sendJson(res, 201, { data: db.prepare('SELECT * FROM zone_flows WHERE id = ?').get(result.lastInsertRowid) });
+  }
+  const flowMatch = /^\/api\/zone-flows\/(\d+)$/.exec(route);
+  if (flowMatch && method === 'DELETE') {
+    auth.requireAdmin(req);
+    db.prepare('DELETE FROM zone_flows WHERE id = ?').run(Number(flowMatch[1]));
+    return sendJson(res, 200, { ok: true });
+  }
+
+  if (route === '/api/locations' && method === 'GET') {
+    const rows = db.prepare(`
+      SELECT l.*, u.name AS user_name, u.photo, u.role, z.name AS zone_name, z.color AS zone_color
+      FROM employee_locations l
+      JOIN users u ON u.id = l.user_id
+      LEFT JOIN zones z ON z.id = l.zone_id
+      WHERE u.active = 1 ORDER BY z.name, u.name
+    `).all();
+    return sendJson(res, 200, { data: rows });
+  }
+  if (route === '/api/locations/me' && method === 'PUT') {
+    const body = await readJson(req);
+    const zoneId = Number(body.zone_id) || null;
+    if (zoneId && !db.prepare('SELECT 1 FROM zones WHERE id = ?').get(zoneId)) throw fail(400, 'Zona inválida');
+    db.prepare(`INSERT INTO employee_locations (user_id, zone_id, note, updated_at) VALUES (?, ?, ?, datetime('now'))
+      ON CONFLICT(user_id) DO UPDATE SET zone_id = excluded.zone_id, note = excluded.note, updated_at = datetime('now')`)
+      .run(user.id, zoneId, asText(body.note, 160));
+    return sendJson(res, 200, { data: { ok: true } });
+  }
+
   if (route === '/api/settings' && method === 'GET') {
     const rows = db.prepare('SELECT key, value FROM settings').all();
     return sendJson(res, 200, { data: Object.fromEntries(rows.map((row) => [row.key, row.value])) });
@@ -1129,7 +1275,7 @@ async function handleApi(req, res, url) {
   if (route === '/api/settings' && method === 'PUT') {
     auth.requireAdmin(req);
     const body = await readJson(req);
-    const allowed = ['company_name', 'contact_email', 'default_start', 'default_end', 'alert_days'];
+    const allowed = ['company_name', 'contact_email', 'company_address', 'default_start', 'default_end', 'alert_days'];
     const update = db.prepare('INSERT INTO settings (key, value) VALUES (?, ?) ON CONFLICT(key) DO UPDATE SET value = excluded.value');
     db.exec('BEGIN');
     try {

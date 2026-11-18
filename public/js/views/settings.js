@@ -1,6 +1,6 @@
-import { store } from '../store.js?v=19';
-import { api } from '../api.js?v=19';
-import { esc, toast } from '../ui.js?v=19';
+import { store } from '../store.js?v=20';
+import { api } from '../api.js?v=20';
+import { esc, toast } from '../ui.js?v=20';
 
 export function render() {
   const s = store.settings;
@@ -10,6 +10,7 @@ export function render() {
       <form id="settings-form" class="form-grid">
         <div class="field"><label for="s-company">Nome da empresa</label><input id="s-company" name="company_name" value="${esc(s.company_name)}"></div>
         <div class="field"><label for="s-email">E-mail de contato</label><input id="s-email" name="contact_email" type="email" value="${esc(s.contact_email)}"></div>
+        <div class="field full"><label for="s-address">Endereço do local de trabalho</label><input id="s-address" name="company_address" value="${esc(s.company_address || '')}" placeholder="Rua, número, cidade"></div>
         <div class="field"><label for="s-start">Horário padrão de início</label><input id="s-start" name="default_start" type="time" value="${esc(s.default_start)}"></div>
         <div class="field"><label for="s-end">Horário padrão de término</label><input id="s-end" name="default_end" type="time" value="${esc(s.default_end)}"></div>
         <div class="field full"><label for="s-alert">Dias de aviso antes da escala</label><input id="s-alert" name="alert_days" type="number" min="0" max="999" value="${esc(s.alert_days)}"></div>

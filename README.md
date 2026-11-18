@@ -41,7 +41,8 @@ O funcionário é vinculado a um integrante da equipe. No cadastro de usuário (
 - **Diferenciais**: regras configuráveis por convenção, selo de publicação com hash SHA-256 e dossiê de conformidade em PDF para advogado/sindicato/RT.
 - **Convites e vínculo**: o administrador gera um código válido por 7 dias; o novo usuário se cadastra informando o código; o pedido fica pendente e o administrador aprova ou recusa o vínculo.
 - **Organização**: setores, equipes e cargos separados, com níveis e vínculo com integrantes.
-- **Fluxo de trabalho**: tarefas atribuídas a pessoa/equipe/setor com status, prioridade, prazo e comentários; chamados enviados a um setor com conversa e status gerido pelo administrador.
+- **Fluxo de trabalho**: tarefas atribuídas a pessoa/equipe/setor com status, prioridade, prazo e comentários; chamados enviados a um setor, com **chamada a pessoas específicas** (aceitar/recusar), conversa e status gerido pelo administrador. O setor pode ter um responsável e atribui o chamado automaticamente.
+- **Mapa do local**: layout da loja com áreas (Vendas, Estoque, RMA, Supermercado, Garagem, Ponto), fluxos entre áreas, arraste para reposicionar, localização de cada pessoa ("Onde você está") e distribuição por área em tempo real.
 - **Troca de turnos**: o funcionário solicita, o administrador aprova e as notificações avisam as partes.
 - Privacidade: aviso LGPD e exportação/exclusão dos próprios dados pelo perfil.
 - PWA: instalável no celular, com cache offline para leitura do painel e das escalas.
@@ -91,7 +92,11 @@ Comandos úteis: `npm run check` (sintaxe), `npm run lint` (ESLint), `npm test` 
 | GET/POST/PUT/DELETE | `/api/departments` · `/api/teams` · `/api/positions` | leitura: autenticado / escrita: admin |
 | GET/POST | `/api/invitations` · PUT `/api/invitations/:id/approve\|reject` | admin |
 | GET/POST/PUT/DELETE | `/api/tasks` · `/api/tasks/:id/comments` | autenticado (escopo) / admin |
-| GET/POST/PUT | `/api/tickets` · `/api/tickets/:id/messages` | autenticado (escopo) / admin |
+| GET/POST/PUT | `/api/tickets` · `/api/tickets/:id/messages` · `/api/tickets/:id/calls` | autenticado (escopo) / admin |
+| GET/POST | `/api/zones` · `/api/zone-flows` · `/api/zones/default` | leitura: autenticado / escrita: admin |
+| PUT/DELETE | `/api/zones/:id` · `/api/zone-flows/:id` | admin |
+| GET | `/api/locations` · `/api/user-options` | autenticado |
+| PUT | `/api/locations/me` | autenticado (própria localização) |
 | GET | `/api/audit?q=&limit=` | admin |
 | PUT | `/api/settings` | admin |
 

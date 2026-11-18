@@ -249,6 +249,42 @@ test('smoke Cuco', async (t) => {
     assert.equal(message.status, 201);
   });
 
+  await t.test('mapa do local e chamada a pessoa específica', async () => {
+    const admin = await login('admin', 'admin123');
+    const headers = { Cookie: admin.cookies, 'Content-Type': 'application/json', 'X-CSRF-Token': admin.payload.data.csrf };
+    const layout = await fetch(`${BASE}/api/zones/default`, { method: 'POST', headers, body: '{}' });
+    assert.equal(layout.status, 201);
+    const zones = await (await fetch(`${BASE}/api/zones`, { headers: { Cookie: admin.cookies } })).json();
+    assert.equal(zones.data.length, 6);
+    const flow = await fetch(`${BASE}/api/zone-flows`, {
+      method: 'POST', headers, body: JSON.stringify({ from_zone: zones.data[0].id, to_zone: zones.data[1].id, label: 'Vendas → Estoque' }),
+    });
+    assert.equal(flow.status, 201);
+
+    const employee = await login('funcionario', 'funcionario123');
+    const employeeHeaders = { Cookie: employee.cookies, 'Content-Type': 'application/json', 'X-CSRF-Token': employee.payload.data.csrf };
+    const me = await (await fetch(`${BASE}/api/me`, { headers: { Cookie: employee.cookies } })).json();
+    const here = await fetch(`${BASE}/api/locations/me`, {
+      method: 'PUT', headers: employeeHeaders, body: JSON.stringify({ zone_id: zones.data[0].id, note: 'No salão' }),
+    });
+    assert.equal(here.status, 200);
+    const locations = await (await fetch(`${BASE}/api/locations`, { headers: { Cookie: admin.cookies } })).json();
+    assert.ok(locations.data.some((item) => item.user_id === me.data.id && item.zone_id === zones.data[0].id));
+
+    const ticket = await (await fetch(`${BASE}/api/tickets`, {
+      method: 'POST', headers: employeeHeaders,
+      body: JSON.stringify({ title: 'Chamar técnico', user_ids: [me.data.id] }),
+    })).json();
+    const myTickets = await (await fetch(`${BASE}/api/tickets`, { headers: { Cookie: employee.cookies } })).json();
+    assert.ok(myTickets.data.some((item) => item.id === ticket.data.id));
+    const calls = await (await fetch(`${BASE}/api/tickets/${ticket.data.id}/calls`, { headers: { Cookie: employee.cookies } })).json();
+    assert.equal(calls.data.length, 1);
+    const accepted = await fetch(`${BASE}/api/tickets/${ticket.data.id}/calls/${calls.data[0].id}`, {
+      method: 'PUT', headers: employeeHeaders, body: JSON.stringify({ status: 'aceito' }),
+    });
+    assert.equal(accepted.status, 200);
+  });
+
   await t.test('validador de escala responde com limites', async () => {
     const admin = await login('admin', 'admin123');
     const response = await fetch(`${BASE}/api/compliance`, { headers: { Cookie: admin.cookies } });
