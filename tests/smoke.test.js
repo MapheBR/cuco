@@ -285,6 +285,23 @@ test('smoke Cuco', async (t) => {
     assert.equal(accepted.status, 200);
   });
 
+  await t.test('geolocalização identifica o raio correto', async () => {
+    const employee = await login('funcionario', 'funcionario123');
+    const headers = { Cookie: employee.cookies, 'Content-Type': 'application/json', 'X-CSRF-Token': employee.payload.data.csrf };
+    const inside = await (await fetch(`${BASE}/api/locations/me`, {
+      method: 'PUT', headers,
+      body: JSON.stringify({ latitude: -23.55050, longitude: -46.63330 }),
+    })).json();
+    assert.equal(inside.data.zone_name, 'Vendas');
+    assert.ok(inside.data.distance < 30);
+    const outside = await (await fetch(`${BASE}/api/locations/me`, {
+      method: 'PUT', headers,
+      body: JSON.stringify({ latitude: -23.60000, longitude: -46.70000 }),
+    })).json();
+    assert.equal(outside.data.zone_name, null);
+    assert.match(outside.data.message, /fora de todos os raios/);
+  });
+
   await t.test('validador de escala responde com limites', async () => {
     const admin = await login('admin', 'admin123');
     const response = await fetch(`${BASE}/api/compliance`, { headers: { Cookie: admin.cookies } });

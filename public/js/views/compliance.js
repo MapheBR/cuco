@@ -1,6 +1,6 @@
-import { store } from '../store.js?v=20';
-import { api } from '../api.js?v=20';
-import { esc, emptyState, toast } from '../ui.js?v=20';
+import { store } from '../store.js?v=21';
+import { api } from '../api.js?v=21';
+import { esc, emptyState, toast } from '../ui.js?v=21';
 
 let severityFilter = 'all';
 

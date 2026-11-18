@@ -1,6 +1,6 @@
-import { store } from '../store.js?v=20';
-import { api } from '../api.js?v=20';
-import { esc, toast, emptyState } from '../ui.js?v=20';
+import { store } from '../store.js?v=21';
+import { api } from '../api.js?v=21';
+import { esc, toast, emptyState } from '../ui.js?v=21';
 
 const isAdmin = () => store.user?.role === 'admin';
 
@@ -55,11 +55,63 @@ function scene() {
   </svg></div>`;
 }
 
+function geoScene() {
+  const zones = store.zones.filter((zone) => zone.latitude != null && zone.longitude != null);
+  if (!zones.length) return emptyState('Raios ainda não configurados', 'O administrador pode definir latitude, longitude e raio de cada área.');
+  const lats = zones.map((zone) => zone.latitude);
+  const lons = zones.map((zone) => zone.longitude);
+  const minLat = Math.min(...lats, ...store.locations.filter((p) => p.latitude != null).map((p) => p.latitude)) - 0.0004;
+  const maxLat = Math.max(...lats, ...store.locations.filter((p) => p.latitude != null).map((p) => p.latitude)) + 0.0004;
+  const minLon = Math.min(...lons, ...store.locations.filter((p) => p.longitude != null).map((p) => p.longitude)) - 0.0004;
+  const maxLon = Math.max(...lons, ...store.locations.filter((p) => p.longitude != null).map((p) => p.longitude)) + 0.0004;
+  const spanLat = Math.max(0.0008, maxLat - minLat);
+  const spanLon = Math.max(0.0008, maxLon - minLon);
+  const px = (lon) => 40 + (lon - minLon) / spanLon * 920;
+  const py = (lat) => 40 + (maxLat - lat) / spanLat * 520;
+  const radiusPx = (zone) => Math.max(14, zone.radius / 111320 / spanLat * 520);
+
+  const circles = zones.map((zone) => `<g>
+    <circle cx="${px(zone.longitude)}" cy="${py(zone.latitude)}" r="${radiusPx(zone)}" fill="${zone.color}" fill-opacity=".13" stroke="${zone.color}" stroke-width="2" stroke-dasharray="6 5"/>
+    <circle cx="${px(zone.longitude)}" cy="${py(zone.latitude)}" r="5" fill="${zone.color}"/>
+    <text x="${px(zone.longitude) + 10}" y="${py(zone.latitude) - 10}" font-size="14" font-weight="800" fill="#0E4B2B">${esc(zone.name)}</text>
+    <text x="${px(zone.longitude) + 10}" y="${py(zone.latitude) + 8}" font-size="11" fill="#5C7266">${zone.radius} m</text>
+  </g>`).join('');
+  const people = store.locations.filter((place) => place.latitude != null && place.longitude != null).map((place, index) => {
+    const x = px(place.longitude);
+    const y = py(place.latitude) + (index % 3) * 18;
+    return `<g><circle cx="${x}" cy="${y}" r="13" fill="#fff" stroke="#0E4B2B" stroke-width="2"/>
+      <text x="${x}" y="${y + 4}" text-anchor="middle" font-size="10" font-weight="800" fill="#0E4B2B">${esc(place.user_name.split(' ').map((p) => p[0]).slice(0, 2).join(''))}</text>
+      <title>${esc(place.user_name)} · ${esc(place.zone_name || 'Fora dos raios')}</title></g>`;
+  }).join('');
+  return `<div class="map-canvas"><svg viewBox="0 0 1000 600" preserveAspectRatio="xMidYMid meet" role="img" aria-label="Mapa com raios de localização">
+    <rect width="1000" height="600" rx="18" fill="#F8FCF9" stroke="#E2EDE6"/>
+    ${circles}${people}
+  </svg></div>`;
+}
+
+function radiusEditor() {
+  if (!isAdmin() || !store.zones.length) return '';
+  return `<section class="card"><div class="card-head"><div><h2>Raios das áreas</h2>
+    <p>Defina as coordenadas reais e o alcance de cada espaço</p></div>
+    <button class="btn btn-primary btn-sm" id="save-radii" type="button">Salvar raios</button></div>
+    <div class="table-wrap"><table><thead><tr><th>Área</th><th>Latitude</th><th>Longitude</th><th>Raio (m)</th></tr></thead>
+    <tbody>${store.zones.map((zone) => `<tr>
+      <td class="strong">${esc(zone.name)}</td>
+      <td><input class="radius-input" data-zone-id="${zone.id}" data-field="latitude" type="number" step="0.000001" value="${zone.latitude ?? ''}"></td>
+      <td><input class="radius-input" data-zone-id="${zone.id}" data-field="longitude" type="number" step="0.000001" value="${zone.longitude ?? ''}"></td>
+      <td><input class="radius-input" data-zone-id="${zone.id}" data-field="radius" type="number" min="5" value="${zone.radius || 30}"></td>
+    </tr>`).join('')}</tbody></table></div>
+    <p class="form-note">As coordenadas padrão são apenas ilustrativas — substitua pelas coordenadas reais da sua empresa.</p>
+  </section>`;
+}
+
 function presence() {
   const here = store.locations.find((item) => item.user_id === store.user.id);
   return `<div class="card"><div class="card-head"><div><h2>Onde você está</h2>
     <p>${here ? `Atualizado em ${new Date(here.updated_at.replace(' ', 'T') + 'Z').toLocaleString('pt-BR')}` : 'Informe sua localização atual'}</p></div></div>
-    <div class="row">${store.zones.map((zone) => `<button class="btn ${here?.zone_id === zone.id ? 'btn-primary' : 'btn-ghost'} btn-sm" data-zone-here="${zone.id}" type="button">${esc(zone.name)}</button>`).join('')}</div>
+    <div class="row"><button class="btn btn-primary btn-sm" id="use-gps" type="button">📍 Usar localização do celular</button></div>
+    <p class="form-note">Ou informe manualmente:</p>
+    <div class="row">${store.zones.map((zone) => `<button class="btn ${here?.zone_id === zone.id ? 'btn-ghost' : 'btn-outline'} btn-sm" data-zone-here="${zone.id}" type="button">${esc(zone.name)}</button>`).join('')}</div>
     ${here?.note ? `<p class="small muted" style="margin-top:10px">${esc(here.note)}</p>` : ''}
   </div>`;
 }
@@ -85,6 +137,9 @@ function adminTools() {
       <div class="field"><label>Nova área</label><input id="zone-name" placeholder="Ex.: Vendas"></div>
       <div class="field"><label>Cor</label><input id="zone-color" type="color" value="#1E8A4C"></div>
       <div class="field"><label>Descrição</label><input id="zone-desc" placeholder="Opcional"></div>
+      <div class="field"><label>Latitude</label><input id="zone-lat" type="number" step="0.000001" placeholder="-23.550500"></div>
+      <div class="field"><label>Longitude</label><input id="zone-lon" type="number" step="0.000001" placeholder="-46.633300"></div>
+      <div class="field"><label>Raio (metros)</label><input id="zone-radius" type="number" min="5" value="30"></div>
       <div class="field"><label>Fluxo (de → para)</label><div class="row">
         <select id="flow-from">${store.zones.map((z) => `<option value="${z.id}">${esc(z.name)}</option>`).join('')}</select>
         <select id="flow-to">${store.zones.map((z) => `<option value="${z.id}">${esc(z.name)}</option>`).join('')}</select>
@@ -100,9 +155,14 @@ export function render() {
       <p>${esc(store.settings.company_name || '')} · ${esc(store.settings.company_address || 'Endereço não informado')}</p></div></div>
       ${scene()}
     </section>
+    <section class="card"><div class="card-head"><div><h2>Raios por localização (GPS)</h2>
+      <p>O sistema identifica em qual raio o funcionário está</p></div></div>
+      ${geoScene()}
+    </section>
     ${presence()}
     ${distribution()}
     ${adminTools()}
+    ${radiusEditor()}
   </div>`;
 }
 
@@ -115,6 +175,37 @@ export function mount() {
         window.dispatchEvent(new CustomEvent('cuco:refresh'));
       } catch (error) { toast(error.message, 'error'); }
     });
+  });
+
+  document.getElementById('use-gps')?.addEventListener('click', () => {
+    if (!navigator.geolocation) return toast('Seu navegador não suporta geolocalização', 'error');
+    navigator.geolocation.getCurrentPosition(async (position) => {
+      try {
+        const result = await api.put('/api/locations/me', {
+          latitude: position.coords.latitude,
+          longitude: position.coords.longitude,
+        });
+        toast(result.message);
+        window.dispatchEvent(new CustomEvent('cuco:refresh'));
+      } catch (error) {
+        toast(error.message, 'error');
+      }
+    }, () => toast('Permissão negada ou sinal indisponível. Use a seleção manual.', 'error'),
+    { enableHighAccuracy: true, timeout: 10000, maximumAge: 0 });
+  });
+
+  document.getElementById('save-radii')?.addEventListener('click', async () => {
+    try {
+      const changes = new Map();
+      document.querySelectorAll('.radius-input').forEach((input) => {
+        const id = input.dataset.zoneId;
+        if (!changes.has(id)) changes.set(id, {});
+        changes.get(id)[input.dataset.field] = input.value;
+      });
+      for (const [id, payload] of changes) await api.put(`/api/zones/${id}`, payload);
+      toast('Raios salvos');
+      window.dispatchEvent(new CustomEvent('cuco:refresh'));
+    } catch (error) { toast(error.message, 'error'); }
   });
 
   document.getElementById('default-layout')?.addEventListener('click', async () => {
@@ -131,6 +222,9 @@ export function mount() {
       await api.post('/api/zones', {
         name, color: document.getElementById('zone-color').value,
         description: document.getElementById('zone-desc').value,
+        latitude: document.getElementById('zone-lat').value,
+        longitude: document.getElementById('zone-lon').value,
+        radius: Number(document.getElementById('zone-radius').value) || 30,
         x: 40 + (store.zones.length % 3) * 300, y: 40 + Math.floor(store.zones.length / 3) * 180,
       });
       toast('Área adicionada');

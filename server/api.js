@@ -361,6 +361,28 @@ function logActivity(req, action, detail = '') {
     .run(user.id, user.name, action, asText(detail, 300), ip, agent);
 }
 
+function distanceMeters(lat1, lon1, lat2, lon2) {
+  const toRad = (value) => value * Math.PI / 180;
+  const earth = 6371000;
+  const dLat = toRad(lat2 - lat1);
+  const dLon = toRad(lon2 - lon1);
+  const a = Math.sin(dLat / 2) ** 2 + Math.cos(toRad(lat1)) * Math.cos(toRad(lat2)) * Math.sin(dLon / 2) ** 2;
+  return 2 * earth * Math.asin(Math.sqrt(a));
+}
+
+function findZoneByCoordinates(latitude, longitude) {
+  let best = null;
+  let bestDistance = Infinity;
+  for (const zone of db.prepare('SELECT * FROM zones WHERE active = 1 AND latitude IS NOT NULL AND longitude IS NOT NULL').all()) {
+    const meters = distanceMeters(latitude, longitude, zone.latitude, zone.longitude);
+    if (meters <= zone.radius && meters < bestDistance) {
+      best = zone;
+      bestDistance = meters;
+    }
+  }
+  return { zone: best, meters: best ? Math.round(bestDistance) : null };
+}
+
 function memberContext(user) {
   if (!user.member_id) return {};
   return db.prepare('SELECT department_id, team_id FROM members WHERE id = ?').get(user.member_id) || {};
@@ -1174,10 +1196,14 @@ async function handleApi(req, res, url) {
     const body = await readJson(req);
     const name = asText(body.name, 80);
     if (name.length < 2) throw fail(400, 'Informe o nome da zona');
-    const result = db.prepare('INSERT INTO zones (name, description, color, x, y, w, h) VALUES (?, ?, ?, ?, ?, ?, ?)')
+    const result = db.prepare(`INSERT INTO zones (name, description, color, x, y, w, h, latitude, longitude, radius)
+      VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`)
       .run(name, asText(body.description, 300), /^#[0-9A-Fa-f]{6}$/.test(body.color) ? body.color : '#1E8A4C',
         Math.max(0, Math.min(900, Number(body.x) || 0)), Math.max(0, Math.min(520, Number(body.y) || 0)),
-        Math.max(60, Math.min(500, Number(body.w) || 160)), Math.max(50, Math.min(400, Number(body.h) || 110)));
+        Math.max(60, Math.min(500, Number(body.w) || 160)), Math.max(50, Math.min(400, Number(body.h) || 110)),
+        body.latitude !== undefined && body.latitude !== '' ? Number(body.latitude) : null,
+        body.longitude !== undefined && body.longitude !== '' ? Number(body.longitude) : null,
+        Math.max(5, Math.min(2000, Number(body.radius) || 30)));
     logActivity(req, 'zone.create', name);
     return sendJson(res, 201, { data: db.prepare('SELECT * FROM zones WHERE id = ?').get(result.lastInsertRowid) });
   }
@@ -1189,13 +1215,21 @@ async function handleApi(req, res, url) {
       if (!current) throw fail(404, 'Zona não encontrada');
       const body = await readJson(req);
       const value = (field, min, max, fallback) => Math.max(min, Math.min(max, Number(body[field]) || fallback));
-      db.prepare('UPDATE zones SET name = ?, description = ?, color = ?, x = ?, y = ?, w = ?, h = ?, active = ? WHERE id = ?')
+      const coordinate = (field, fallback) => {
+        if (body[field] === undefined || body[field] === '') return fallback;
+        const parsed = Number(body[field]);
+        return Number.isFinite(parsed) ? parsed : fallback;
+      };
+      db.prepare(`UPDATE zones SET name = ?, description = ?, color = ?, x = ?, y = ?, w = ?, h = ?, active = ?,
+        latitude = ?, longitude = ?, radius = ? WHERE id = ?`)
         .run(body.name !== undefined ? asText(body.name, 80) : current.name,
           body.description !== undefined ? asText(body.description, 300) : current.description,
           body.color !== undefined && /^#[0-9A-Fa-f]{6}$/.test(body.color) ? body.color : current.color,
           value('x', 0, 900, current.x), value('y', 0, 520, current.y),
           value('w', 60, 500, current.w), value('h', 50, 400, current.h),
-          body.active === undefined ? current.active : (body.active ? 1 : 0), current.id);
+          body.active === undefined ? current.active : (body.active ? 1 : 0),
+          coordinate('latitude', current.latitude), coordinate('longitude', current.longitude),
+          value('radius', 5, 2000, current.radius || 30), current.id);
       return sendJson(res, 200, { data: db.prepare('SELECT * FROM zones WHERE id = ?').get(current.id) });
     }
     if (method === 'DELETE') {
@@ -1208,14 +1242,14 @@ async function handleApi(req, res, url) {
     auth.requireAdmin(req);
     if (db.prepare('SELECT COUNT(*) AS total FROM zones').get().total > 0) throw fail(409, 'Já existe um mapa cadastrado');
     const defaults = [
-      ['Vendas', '#1E8A4C', 30, 60, 220, 150, 'Área de atendimento e checkout'],
-      ['Estoque', '#2E9E86', 280, 60, 220, 150, 'Recebimento e armazenagem'],
-      ['RMA', '#F2A93B', 540, 60, 180, 150, 'Assistência e devoluções'],
-      ['Supermercado', '#4C7DD6', 30, 250, 300, 170, 'Gôndolas e reposição'],
-      ['Garagem', '#9B6BD6', 370, 250, 180, 170, 'Carga e descarga'],
-      ['Ponto', '#E5694F', 590, 250, 130, 170, 'Registro de jornada'],
+      ['Vendas', '#1E8A4C', 30, 60, 220, 150, 'Área de atendimento e checkout', -23.55050, -46.63330, 30],
+      ['Estoque', '#2E9E86', 280, 60, 220, 150, 'Recebimento e armazenagem', -23.55020, -46.63295, 30],
+      ['RMA', '#F2A93B', 540, 60, 180, 150, 'Assistência e devoluções', -23.55050, -46.63260, 25],
+      ['Supermercado', '#4C7DD6', 30, 250, 300, 170, 'Gôndolas e reposição', -23.55080, -46.63330, 35],
+      ['Garagem', '#9B6BD6', 370, 250, 180, 170, 'Carga e descarga', -23.55080, -46.63290, 30],
+      ['Ponto', '#E5694F', 590, 250, 130, 170, 'Registro de jornada', -23.55080, -46.63260, 20],
     ];
-    const insert = db.prepare('INSERT INTO zones (name, color, x, y, w, h, description) VALUES (?, ?, ?, ?, ?, ?, ?)');
+    const insert = db.prepare('INSERT INTO zones (name, color, x, y, w, h, description, latitude, longitude, radius) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)');
     db.exec('BEGIN');
     for (const zone of defaults) insert.run(...zone);
     db.exec('COMMIT');
@@ -1260,12 +1294,31 @@ async function handleApi(req, res, url) {
   }
   if (route === '/api/locations/me' && method === 'PUT') {
     const body = await readJson(req);
-    const zoneId = Number(body.zone_id) || null;
+    let zoneId = Number(body.zone_id) || null;
+    let latitude = null;
+    let longitude = null;
+    let distance = null;
+    if (body.latitude !== undefined && body.longitude !== undefined) {
+      latitude = Number(body.latitude);
+      longitude = Number(body.longitude);
+      if (!Number.isFinite(latitude) || !Number.isFinite(longitude) || Math.abs(latitude) > 90 || Math.abs(longitude) > 180) {
+        throw fail(400, 'Coordenadas inválidas');
+      }
+      const result = findZoneByCoordinates(latitude, longitude);
+      zoneId = result.zone?.id || null;
+      distance = result.meters;
+    }
     if (zoneId && !db.prepare('SELECT 1 FROM zones WHERE id = ?').get(zoneId)) throw fail(400, 'Zona inválida');
-    db.prepare(`INSERT INTO employee_locations (user_id, zone_id, note, updated_at) VALUES (?, ?, ?, datetime('now'))
-      ON CONFLICT(user_id) DO UPDATE SET zone_id = excluded.zone_id, note = excluded.note, updated_at = datetime('now')`)
-      .run(user.id, zoneId, asText(body.note, 160));
-    return sendJson(res, 200, { data: { ok: true } });
+    db.prepare(`INSERT INTO employee_locations (user_id, zone_id, latitude, longitude, note, updated_at)
+      VALUES (?, ?, ?, ?, ?, datetime('now'))
+      ON CONFLICT(user_id) DO UPDATE SET zone_id = excluded.zone_id, latitude = excluded.latitude,
+        longitude = excluded.longitude, note = excluded.note, updated_at = datetime('now')`)
+      .run(user.id, zoneId, latitude, longitude, asText(body.note, 160));
+    const zone = zoneId ? db.prepare('SELECT name FROM zones WHERE id = ?').get(zoneId) : null;
+    return sendJson(res, 200, { data: {
+      ok: true, zone_id: zoneId, zone_name: zone?.name || null, distance,
+      message: zone ? `Você está em ${zone.name}` : 'Você está fora de todos os raios cadastrados',
+    } });
   }
 
   if (route === '/api/settings' && method === 'GET') {

@@ -42,7 +42,7 @@ O funcionário é vinculado a um integrante da equipe. No cadastro de usuário (
 - **Convites e vínculo**: o administrador gera um código válido por 7 dias; o novo usuário se cadastra informando o código; o pedido fica pendente e o administrador aprova ou recusa o vínculo.
 - **Organização**: setores, equipes e cargos separados, com níveis e vínculo com integrantes.
 - **Fluxo de trabalho**: tarefas atribuídas a pessoa/equipe/setor com status, prioridade, prazo e comentários; chamados enviados a um setor, com **chamada a pessoas específicas** (aceitar/recusar), conversa e status gerido pelo administrador. O setor pode ter um responsável e atribui o chamado automaticamente.
-- **Mapa do local**: layout da loja com áreas (Vendas, Estoque, RMA, Supermercado, Garagem, Ponto), fluxos entre áreas, arraste para reposicionar, localização de cada pessoa ("Onde você está") e distribuição por área em tempo real.
+- **Mapa do local**: layout da loja com áreas (Vendas, Estoque, RMA, Supermercado, Garagem, Ponto), fluxos entre áreas e arraste para reposicionar. Cada área tem **latitude, longitude e raio em metros**; o funcionário usa o botão **Usar localização do celular** (geolocalização) e o sistema calcula por haversine em qual raio ele está — ou informa que está fora de todos. Há também seleção manual como fallback. O painel mostra a distribuição por área.
 - **Troca de turnos**: o funcionário solicita, o administrador aprova e as notificações avisam as partes.
 - Privacidade: aviso LGPD e exportação/exclusão dos próprios dados pelo perfil.
 - PWA: instalável no celular, com cache offline para leitura do painel e das escalas.

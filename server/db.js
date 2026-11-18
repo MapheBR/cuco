@@ -43,6 +43,9 @@ db.exec(`
     y INTEGER NOT NULL DEFAULT 10,
     w INTEGER NOT NULL DEFAULT 180,
     h INTEGER NOT NULL DEFAULT 120,
+    latitude REAL,
+    longitude REAL,
+    radius INTEGER NOT NULL DEFAULT 30,
     active INTEGER NOT NULL DEFAULT 1,
     created_at TEXT NOT NULL DEFAULT (datetime('now'))
   );
@@ -57,6 +60,8 @@ db.exec(`
   CREATE TABLE IF NOT EXISTS employee_locations (
     user_id INTEGER PRIMARY KEY REFERENCES users(id) ON DELETE CASCADE,
     zone_id INTEGER REFERENCES zones(id) ON DELETE SET NULL,
+    latitude REAL,
+    longitude REAL,
     note TEXT NOT NULL DEFAULT '',
     updated_at TEXT NOT NULL DEFAULT (datetime('now'))
   );
@@ -226,6 +231,13 @@ function migrate() {
   const userColumns = db.prepare('PRAGMA table_info(users)').all().map((column) => column.name);
   if (!userColumns.includes('member_id')) db.exec('ALTER TABLE users ADD COLUMN member_id INTEGER REFERENCES members(id) ON DELETE SET NULL');
   if (!userColumns.includes('token_version')) db.exec("ALTER TABLE users ADD COLUMN token_version INTEGER NOT NULL DEFAULT 0");
+  const zoneColumns = db.prepare('PRAGMA table_info(zones)').all().map((column) => column.name);
+  if (!zoneColumns.includes('latitude')) db.exec('ALTER TABLE zones ADD COLUMN latitude REAL');
+  if (!zoneColumns.includes('longitude')) db.exec('ALTER TABLE zones ADD COLUMN longitude REAL');
+  if (!zoneColumns.includes('radius')) db.exec('ALTER TABLE zones ADD COLUMN radius INTEGER NOT NULL DEFAULT 30');
+  const locationColumns = db.prepare('PRAGMA table_info(employee_locations)').all().map((column) => column.name);
+  if (!locationColumns.includes('latitude')) db.exec('ALTER TABLE employee_locations ADD COLUMN latitude REAL');
+  if (!locationColumns.includes('longitude')) db.exec('ALTER TABLE employee_locations ADD COLUMN longitude REAL');
   const departmentColumns = db.prepare('PRAGMA table_info(departments)').all().map((column) => column.name);
   if (!departmentColumns.includes('responsible_user_id')) db.exec('ALTER TABLE departments ADD COLUMN responsible_user_id INTEGER REFERENCES users(id) ON DELETE SET NULL');
   const logColumns = db.prepare('PRAGMA table_info(activity_log)').all().map((column) => column.name);
