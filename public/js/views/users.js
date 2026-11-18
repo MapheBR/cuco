@@ -1,6 +1,6 @@
-import { store } from '../store.js?v=16';
-import { api } from '../api.js?v=16';
-import { esc, avatar, toast, confirmDelete, emptyState, photoField, bindPhotoField, memberOptions } from '../ui.js?v=16';
+import { store } from '../store.js?v=17';
+import { api } from '../api.js?v=17';
+import { esc, avatar, toast, confirmDelete, emptyState, photoField, bindPhotoField, memberOptions } from '../ui.js?v=17';
 
 function form() {
   const edit = store.editingUser;

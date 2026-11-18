@@ -112,4 +112,4 @@ function serveStatic(res, filePath) {
   });
 }
 
-module.exports = { sendJson, fail, readJson, asText, isDate, isTime, monthRange, currentMonth, serveStatic };
+module.exports = { sendJson, fail, readJson, asText, isDate, isTime, monthRange, currentMonth, serveStatic, SECURITY_HEADERS };

@@ -63,6 +63,32 @@ db.exec(`
     created_at TEXT NOT NULL DEFAULT (datetime('now'))
   );
 
+  CREATE TABLE IF NOT EXISTS published_schedules (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    month TEXT NOT NULL,
+    payload TEXT NOT NULL,
+    hash TEXT NOT NULL,
+    author TEXT NOT NULL,
+    created_at TEXT NOT NULL DEFAULT (datetime('now'))
+  );
+
+  CREATE TABLE IF NOT EXISTS shift_swaps (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    shift_id INTEGER NOT NULL REFERENCES shifts(id) ON DELETE CASCADE,
+    from_user_id INTEGER NOT NULL REFERENCES users(id),
+    to_member_id INTEGER NOT NULL REFERENCES members(id),
+    status TEXT NOT NULL DEFAULT 'pendente',
+    created_at TEXT NOT NULL DEFAULT (datetime('now'))
+  );
+
+  CREATE TABLE IF NOT EXISTS notifications (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    user_id INTEGER NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+    message TEXT NOT NULL,
+    read INTEGER NOT NULL DEFAULT 0,
+    created_at TEXT NOT NULL DEFAULT (datetime('now'))
+  );
+
   CREATE INDEX IF NOT EXISTS idx_shifts_date ON shifts(date);
   CREATE INDEX IF NOT EXISTS idx_shifts_member ON shifts(member_id);
   CREATE INDEX IF NOT EXISTS idx_shifts_status ON shifts(status);
@@ -113,6 +139,15 @@ function seedSettings() {
   insert.run('default_start', '08:00');
   insert.run('default_end', '16:00');
   insert.run('alert_days', '3');
+  insert.run('rule_hours_before', '44');
+  insert.run('rule_hours_2026', '42');
+  insert.run('rule_hours_2027', '40');
+  insert.run('rule_min_rest', '11');
+  insert.run('rule_max_worked_7', '5');
+  insert.run('rule_max_daily', '8');
+  insert.run('rule_overtime_daily', '2');
+  insert.run('rule_break_after', '6');
+  insert.run('rule_source', 'Regra geral CLT / EC 141/2026');
 }
 
 function seed() {

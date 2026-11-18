@@ -1,7 +1,7 @@
-import { store } from '../store.js?v=16';
-import { api } from '../api.js?v=16';
-import { esc, statusBadge, formatDate, monthLabel, emptyState, countUp, donutChart, trendChart, avatar } from '../ui.js?v=16';
-import { mascotSvg, mascotMood, MASCOT_LINES } from '../mascot.js?v=16';
+import { store } from '../store.js?v=17';
+import { api } from '../api.js?v=17';
+import { esc, statusBadge, formatDate, monthLabel, emptyState, countUp, donutChart, trendChart, avatar, modal, closeModal } from '../ui.js?v=17';
+import { mascotSvg, mascotMood, MASCOT_LINES } from '../mascot.js?v=17';
 
 function shiftMonth(offset) {
   const [year, month] = store.month.split('-').map(Number);
@@ -142,6 +142,7 @@ function employeeView(summary) {
             <div class="my-shift-info"><strong>${esc(shift.title)}</strong><small>${esc(shift.start_time)} – ${esc(shift.end_time)} · ${formatDate(shift.date, true)}</small></div>
             ${statusBadge(shift.status)}
             ${shift.status !== 'confirmado' ? `<button class="btn btn-ghost btn-sm" data-confirm="${shift.id}" type="button">Confirmar</button>` : '<span class="small muted">Confirmado</span>'}
+            <button class="btn btn-outline btn-sm" data-swap-shift="${shift.id}" type="button">Trocar</button>
           </div>`;
         }).join('') : emptyState('Nenhuma escala futura', 'Quando uma escala for publicada, ela aparece aqui.')}
       </div>
@@ -182,6 +183,33 @@ export function mount() {
         await api.put(`/api/my-shifts/${button.dataset.confirm}/confirm`, {});
         window.dispatchEvent(new CustomEvent('cuco:toast', { detail: { message: 'Turno confirmado com sucesso' } }));
         window.dispatchEvent(new CustomEvent('cuco:refresh'));
+      } catch (error) {
+        window.dispatchEvent(new CustomEvent('cuco:toast', { detail: { message: error.message, type: 'error' } }));
+      }
+    });
+  });
+  document.querySelectorAll('[data-swap-shift]').forEach((button) => {
+    button.addEventListener('click', async () => {
+      try {
+        const options = await api.get('/api/team-options');
+        modal('Solicitar troca de turno', `<form id="swap-form" class="form-grid">
+          <div class="field full"><label for="swap-member">Trocar com</label>
+            <select id="swap-member" name="to_member_id" required>${options.map((member) => `<option value="${member.id}">${esc(member.name)}</option>`).join('')}</select></div>
+          <p class="form-note full">A solicitação fica pendente até o administrador aprovar.</p>
+          <div class="field full form-actions"><button class="btn btn-primary" type="submit">Enviar solicitação</button>
+            <button class="btn btn-outline" data-close-modal type="button">Cancelar</button></div>
+        </form>`);
+        document.getElementById('swap-form').addEventListener('submit', async (event) => {
+          event.preventDefault();
+          try {
+            await api.post(`/api/shifts/${button.dataset.swapShift}/swap`, Object.fromEntries(new FormData(event.currentTarget)));
+            closeModal();
+            window.dispatchEvent(new CustomEvent('cuco:toast', { detail: { message: 'Solicitação enviada ao administrador' } }));
+            window.dispatchEvent(new CustomEvent('cuco:refresh'));
+          } catch (error) {
+            window.dispatchEvent(new CustomEvent('cuco:toast', { detail: { message: error.message, type: 'error' } }));
+          }
+        });
       } catch (error) {
         window.dispatchEvent(new CustomEvent('cuco:toast', { detail: { message: error.message, type: 'error' } }));
       }

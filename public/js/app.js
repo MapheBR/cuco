@@ -1,16 +1,17 @@
-import { store, loadMembers, loadUsers, loadAudit, loadCompliance, loadMyShifts, loadSummary, loadSettings, loadShifts } from './store.js?v=16';
-import { api } from './api.js?v=16';
-import { mascotSvg, initMascotInteractions } from './mascot.js?v=16';
-import { loadingState, errorState, toast, confetti, modal, closeModal, photoField, bindPhotoField, confirmDelete } from './ui.js?v=16';
-import { mountLogin } from './views/login.js?v=16';
-import * as dashboard from './views/dashboard.js?v=16';
-import * as shifts from './views/shifts.js?v=16';
-import * as team from './views/team.js?v=16';
-import * as users from './views/users.js?v=16';
-import * as audit from './views/audit.js?v=16';
-import * as compliance from './views/compliance.js?v=16';
-import * as settings from './views/settings.js?v=16';
-import * as privacy from './views/privacy.js?v=16';
+import { store, loadMembers, loadUsers, loadAudit, loadCompliance, loadSwaps, loadNotifications, loadMyShifts, loadSummary, loadSettings, loadShifts } from './store.js?v=17';
+import { api } from './api.js?v=17';
+import { mascotSvg, initMascotInteractions } from './mascot.js?v=17';
+import { loadingState, errorState, toast, confetti, modal, closeModal, photoField, bindPhotoField, confirmDelete, esc } from './ui.js?v=17';
+import { mountLogin } from './views/login.js?v=17';
+import * as dashboard from './views/dashboard.js?v=17';
+import * as shifts from './views/shifts.js?v=17';
+import * as team from './views/team.js?v=17';
+import * as users from './views/users.js?v=17';
+import * as audit from './views/audit.js?v=17';
+import * as compliance from './views/compliance.js?v=17';
+import * as settings from './views/settings.js?v=17';
+import * as privacy from './views/privacy.js?v=17';
+import * as swaps from './views/swaps.js?v=17';
 
 const VIEWS = {
   dashboard: { module: dashboard, title: 'Visão geral', eyebrow: 'PAINEL' },
@@ -21,6 +22,7 @@ const VIEWS = {
   audit: { module: audit, title: 'Auditoria', eyebrow: 'SEGURANÇA' },
   settings: { module: settings, title: 'Configurações', eyebrow: 'SISTEMA' },
   privacy: { module: privacy, title: 'Privacidade', eyebrow: 'LGPD' },
+  swaps: { module: swaps, title: 'Trocas', eyebrow: 'OPERAÇÃO' },
 };
 
 if ('serviceWorker' in navigator) navigator.serviceWorker.register('/sw.js').catch(() => {});
@@ -52,7 +54,7 @@ function updateUserChip() {
 }
 
 async function loadViewData() {
-  await loadSettings();
+  await Promise.all([loadSettings(), loadNotifications()]);
   if (store.view === 'dashboard') {
     if (store.user.role === 'admin') await Promise.all([loadMembers(), loadCompliance()]);
     await loadSummary();
@@ -61,6 +63,7 @@ async function loadViewData() {
   else if (store.view === 'team') await Promise.all([loadMembers(), loadSummary()]);
   else if (store.view === 'users') await Promise.all([loadUsers(), loadMembers()]);
   else if (store.view === 'audit') await loadAudit();
+  else if (store.view === 'swaps') await loadSwaps();
   else if (store.view === 'compliance') await loadCompliance();
 }
 
@@ -76,6 +79,9 @@ async function refresh() {
     current.module.mount();
     updateHeader();
     updateUserChip();
+    const badge = document.getElementById('notification-badge');
+    badge.textContent = store.notifications.unread;
+    badge.classList.toggle('hidden', !store.notifications.unread);
   } catch (error) {
     console.error('[cuco] falha ao carregar a tela:', error);
     viewRoot.innerHTML = errorState(error.message);
@@ -199,6 +205,28 @@ window.addEventListener('cuco:unauthorized', () => {
 });
 window.addEventListener('cuco:refresh', refresh);
 window.addEventListener('cuco:toast', (event) => toast(event.detail.message, event.detail.type));
+
+document.getElementById('notification-toggle').addEventListener('click', () => {
+  const rows = store.notifications.rows;
+  const content = rows.length
+    ? `<div class="mini-list">${rows.map((row) => `<div class="mini-item">
+        <div class="flex-1"><strong>${esc(row.message)}</strong><small>${new Date(row.created_at.replace(' ', 'T') + 'Z').toLocaleString('pt-BR')} · ${row.read ? 'lida' : 'nova'}</small></div>
+        ${row.read ? '' : `<button class="btn btn-outline btn-sm" data-notif-read="${row.id}" type="button">Marcar lida</button>`}
+      </div>`).join('')}</div>`
+    : '<p class="small muted">Nenhuma notificação.</p>';
+  modal('Notificações', content);
+  document.querySelectorAll('[data-notif-read]').forEach((button) => {
+    button.addEventListener('click', async () => {
+      try {
+        await api.put(`/api/notifications/${button.dataset.notifRead}/read`, {});
+        closeModal();
+        refresh();
+      } catch (error) {
+        toast(error.message, 'error');
+      }
+    });
+  });
+});
 
 const motionToggle = document.getElementById('motion-toggle');
 const PAUSE_ICON = '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M9 5v14M15 5v14"/></svg>';

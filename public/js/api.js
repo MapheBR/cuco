@@ -42,4 +42,9 @@ export const api = {
   put: (path, body) => request(path, { method: 'PUT', body: JSON.stringify(body) }),
   del: (path) => request(path, { method: 'DELETE' }),
   upload: (dataUrl) => request('/api/upload', { method: 'POST', body: JSON.stringify({ data: dataUrl }) }),
+  download: async (path) => {
+    const response = await fetch(path, { credentials: 'same-origin' });
+    if (!response.ok) throw new Error('Não foi possível gerar o arquivo');
+    return response.blob();
+  },
 };

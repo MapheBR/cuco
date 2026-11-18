@@ -35,6 +35,8 @@ O funcionário é vinculado a um integrante da equipe. No cadastro de usuário (
 - **Conformidade**: validador automático de escala (jornada semanal, 2 dias de repouso, 11 h entre turnos, intervalo de 1 h e horas extras), com severidades e exportação CSV. Apontamentos, não parecer jurídico.
 - Auditoria: trilha de login, logout, criações, edições, exclusões e alterações de configuração, com filtro e exportação.
 - Configurações gerais: empresa, contato, horários padrão e dias de aviso.
+- **Diferenciais**: regras configuráveis por convenção, selo de publicação com hash SHA-256 e dossiê de conformidade em PDF para advogado/sindicato/RT.
+- **Troca de turnos**: o funcionário solicita, o administrador aprova e as notificações avisam as partes.
 - Privacidade: aviso LGPD e exportação/exclusão dos próprios dados pelo perfil.
 - PWA: instalável no celular, com cache offline para leitura do painel e das escalas.
 
@@ -59,7 +61,7 @@ Tabelas: `members`, `shifts`, `settings`, `users`, `activity_log`. Senhas com ha
 
 Respostas HTTP com `Content-Security-Policy`, `X-Content-Type-Options`, `X-Frame-Options` e `Referrer-Policy`. A auditoria registra IP e user-agent (`x-forwarded-for` só é aceito com `TRUST_PROXY=1`). Fotos ficam em `data/uploads/`, fora do webroot, servidas por handler autenticado. Conformidade é preventiva: salvar uma escala com apontamento crítico exige override auditado.
 
-Comandos úteis: `npm run check` (sintaxe), `npm run lint` (ESLint), `npm test` (13 testes de integração e unidade) e `npm run backup` (`VACUUM INTO`, 7 cópias). O GitHub Actions roda `check`, `lint` e `test` a cada push em `main`. Para produção: `docker compose up -d --build` (defina `SESSION_SECRET`).
+Comandos úteis: `npm run check` (sintaxe), `npm run lint` (ESLint), `npm test` (15 testes de integração e unidade) e `npm run backup` (`VACUUM INTO`, 7 cópias). O GitHub Actions roda `check`, `lint` e `test` a cada push em `main`. Para produção: `docker compose up -d --build` (defina `SESSION_SECRET`).
 
 ## API
 
@@ -74,6 +76,11 @@ Comandos úteis: `npm run check` (sintaxe), `npm run lint` (ESLint), `npm test` 
 | CRUD | `/api/members` · `/api/shifts` · `/api/users` | admin |
 | GET | `/api/compliance?month=YYYY-MM` | admin |
 | POST | `/api/compliance/check` (prévia preventiva) | admin |
+| GET/PUT | `/api/compliance/rules` | autenticado / admin |
+| POST | `/api/compliance/publish` (selo SHA-256) | admin |
+| GET | `/api/compliance/published` · `/api/compliance/dossier` (PDF) | autenticado / admin |
+| POST | `/api/shifts/:id/swap` · GET `/api/swaps` · PUT `/api/swaps/:id` | autenticado / admin (aprovação) |
+| GET | `/api/notifications` · PUT `/api/notifications/:id/read` · `/api/team-options` | autenticado |
 | GET | `/api/audit?q=&limit=` | admin |
 | PUT | `/api/settings` | admin |
 

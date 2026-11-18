@@ -1,4 +1,4 @@
-import { api } from './api.js?v=16';
+import { api } from './api.js?v=17';
 
 export const store = {
   view: 'dashboard',
@@ -9,6 +9,10 @@ export const store = {
   users: [],
   audit: [],
   compliance: null,
+  complianceRules: null,
+  compliancePublished: null,
+  swaps: [],
+  notifications: { rows: [], unread: 0 },
   auditFilters: { q: '', limit: '100' },
   myShifts: { shifts: [], stats: {} },
   summary: null,
@@ -31,7 +35,19 @@ export async function loadUsers() {
 
 export async function loadCompliance() {
   store.compliance = await api.get(`/api/compliance?month=${store.month}`);
+  store.complianceRules = await api.get('/api/compliance/rules');
+  store.compliancePublished = await api.get(`/api/compliance/published?month=${store.month}`);
   return store.compliance;
+}
+
+export async function loadSwaps() {
+  store.swaps = await api.get('/api/swaps');
+  return store.swaps;
+}
+
+export async function loadNotifications() {
+  store.notifications = await api.get('/api/notifications');
+  return store.notifications;
 }
 
 export async function loadAudit() {

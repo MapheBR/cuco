@@ -188,3 +188,17 @@ Não pivotar. Melhorias restantes, em ordem:
 2. Cobertura de testes (`node --test --experimental-test-coverage`) e CD com deploy automático → resolve Health.
 3. Troca obrigatória de senha no primeiro login e migração para driver SQLite estável → resolve Risco.
 4. Regras configuráveis por convenção + dossiê de conformidade em PDF com hash, revisados por advogado/sindicato → resolve Inovação e o último risco jurídico.
+
+## 10. Diferenciais implementados para atacar o comercial
+
+| Diferencial | O que entrega | Por que pode vender |
+| --- | --- | --- |
+| **Regras configuráveis por convenção** | Limites de jornada, repouso, extras e fonte da regra editáveis pela tela de Conformidade | Transforma o validador fixo em motor de compliance adaptável a sindicato/categoria — algo que os concorrentes genéricos não fazem |
+| **Selo de publicação com hash SHA-256** | Cada mês publicado gera snapshot imutável com autor, data e hash | Cria um "ponto de verdade" sobre o que foi escalado e quando |
+| **Dossiê de conformidade em PDF** | PDF com escala, apontamentos, regras vigentes, auditoria e hash — pronto para advogado, sindicato ou RT | Tira o gestor da posição de "sem prova" em reclamação trabalhista; valor monetário claro (evita passivo) |
+| **Troca de turnos com aprovação + notificações in-app** | Funcionário solicita, admin aprova, ambos são notificados | Ataca adoção — o maior risco de negócio apontado pelo avaliador de mercado |
+| **Soberania de dados local** | SQLite self-host, uploads fora do webroot, zero dependências de runtime | Diferencial para PMEs com receio de LGPD/nuvem; base para plano On-prem com setup |
+
+**Reposicionamento recomendado**: deixar de vender "software de escala" (commodity, grátis até 10 funcionários) e vender **"prova defensável da jornada"** para PMEs que já pagam advogado/contador. Preço sugerido: freemium até 10 funcionários/1 unidade; Pro R$ 79–129/mês por unidade com dossiê, trocas, notificações e multunidade; On-prem com taxa de setup.
+
+**Efeito esperado nas notas**: Inovação sobe de 8 para **9/10**; Risco permanece 8; Comercial **continua 5 até haver piloto, preço testado e depoimento**. Nenhuma feature sozinha transforma `insufficient data` em evidência de mercado.

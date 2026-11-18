@@ -137,6 +137,55 @@ test('smoke Cuco', async (t) => {
     await fetch(`${BASE}/api/users/${created.data.id}`, { method: 'DELETE', headers });
   });
 
+  await t.test('regras configuráveis, selo com hash e dossiê PDF', async () => {
+    const admin = await login('admin', 'admin123');
+    const headers = { Cookie: admin.cookies, 'Content-Type': 'application/json', 'X-CSRF-Token': admin.payload.data.csrf };
+    const rules = await (await fetch(`${BASE}/api/compliance/rules`, {
+      method: 'PUT', headers, body: JSON.stringify({ minRest: 10, source: 'Acordo coletivo teste' }),
+    })).json();
+    assert.equal(rules.data.minRest, 10);
+    const published = await (await fetch(`${BASE}/api/compliance/publish`, {
+      method: 'POST', headers, body: JSON.stringify({}),
+    })).json();
+    assert.equal(published.data.hash.length, 64);
+    const latest = await (await fetch(`${BASE}/api/compliance/published`, { headers: { Cookie: admin.cookies } })).json();
+    assert.equal(latest.data.hash, published.data.hash);
+    const dossier = await fetch(`${BASE}/api/compliance/dossier`, { headers: { Cookie: admin.cookies } });
+    assert.equal(dossier.status, 200);
+    assert.match(dossier.headers.get('content-type'), /application\/pdf/);
+    const buffer = Buffer.from(await dossier.arrayBuffer());
+    assert.equal(buffer.subarray(0, 5).toString(), '%PDF-');
+    await fetch(`${BASE}/api/compliance/rules`, {
+      method: 'PUT', headers, body: JSON.stringify({ minRest: 11, source: 'Regra geral CLT / EC 141/2026' }),
+    });
+  });
+
+  await t.test('troca de turno com aprovação e notificação', async () => {
+    const admin = await login('admin', 'admin123');
+    const headers = { Cookie: admin.cookies, 'Content-Type': 'application/json', 'X-CSRF-Token': admin.payload.data.csrf };
+    const created = await (await fetch(`${BASE}/api/shifts`, {
+      method: 'POST', headers,
+      body: JSON.stringify({
+        member_id: 1, date: '2026-12-02', start_time: '08:00', end_time: '16:00',
+        title: 'Turno para troca', override: true,
+      }),
+    })).json();
+    const employee = await login('funcionario', 'funcionario123');
+    const swap = await (await fetch(`${BASE}/api/shifts/${created.data.id}/swap`, {
+      method: 'POST',
+      headers: { Cookie: employee.cookies, 'Content-Type': 'application/json', 'X-CSRF-Token': employee.payload.data.csrf },
+      body: JSON.stringify({ to_member_id: 2 }),
+    })).json();
+    const approved = await (await fetch(`${BASE}/api/swaps/${swap.data.id}`, {
+      method: 'PUT', headers, body: JSON.stringify({ status: 'aprovado' }),
+    })).json();
+    assert.equal(approved.data.status, 'aprovado');
+    const shift = await (await fetch(`${BASE}/api/shifts?from=2026-12-02&to=2026-12-02`, { headers: { Cookie: admin.cookies } })).json();
+    assert.ok(shift.data.some((item) => item.id === created.data.id && item.member_id === 2));
+    const notes = await (await fetch(`${BASE}/api/notifications`, { headers: { Cookie: employee.cookies } })).json();
+    assert.ok(notes.data.rows.length > 0);
+  });
+
   await t.test('validador de escala responde com limites', async () => {
     const admin = await login('admin', 'admin123');
     const response = await fetch(`${BASE}/api/compliance`, { headers: { Cookie: admin.cookies } });

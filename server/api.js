@@ -5,7 +5,8 @@ const fs = require('node:fs');
 const path = require('node:path');
 const db = require('./db');
 const auth = require('./auth');
-const { sendJson, fail, readJson, asText, isDate, isTime, monthRange, currentMonth } = require('./utils');
+const { sendJson, fail, readJson, asText, isDate, isTime, monthRange, currentMonth, SECURITY_HEADERS } = require('./utils');
+const { buildPdf } = require('./pdf');
 
 const STATUSES = new Set(['planejado', 'confirmado', 'concluido', 'falta', 'troca']);
 const COLORS = new Set(['#1E8A4C', '#2E9E86', '#F2A93B', '#4C7DD6', '#9B6BD6', '#E5694F']);
@@ -194,9 +195,35 @@ function getSummary(month) {
   };
 }
 
+function companyName() {
+  const row = db.prepare("SELECT value FROM settings WHERE key = 'company_name'").get();
+  return row?.value || 'Cuco';
+}
+
+function getRules() {
+  const rows = db.prepare("SELECT key, value FROM settings WHERE key LIKE 'rule_%'").all();
+  const values = Object.fromEntries(rows.map((row) => [row.key, row.value]));
+  const number = (key, fallback) => {
+    const parsed = Number(values[key]);
+    return Number.isFinite(parsed) && parsed > 0 ? parsed : fallback;
+  };
+  return {
+    hoursBefore: number('rule_hours_before', 44),
+    hours2026: number('rule_hours_2026', 42),
+    hours2027: number('rule_hours_2027', 40),
+    minRest: number('rule_min_rest', 11),
+    maxWorked7: number('rule_max_worked_7', 5),
+    maxDaily: number('rule_max_daily', 8),
+    overtime: number('rule_overtime_daily', 2),
+    breakAfter: number('rule_break_after', 6),
+    source: values.rule_source || 'Regra geral CLT / EC 141/2026',
+  };
+}
+
 function getCompliance(month, extraShifts = new Map()) {
   const range = monthRange(month) || monthRange(currentMonth());
-  const limitFor = (date) => (date >= '2027-12-16' ? 40 : date >= '2026-12-16' ? 42 : 44);
+  const rules = getRules();
+  const limitFor = (date) => (date >= '2027-12-16' ? rules.hours2027 : date >= '2026-12-16' ? rules.hours2026 : rules.hoursBefore);
   const weeklyLimit = limitFor(range.from);
   const issues = [];
   const members = db.prepare('SELECT id, name FROM members ORDER BY name').all();
@@ -225,13 +252,13 @@ function getCompliance(month, extraShifts = new Map()) {
       bucket.hours += hours;
       weekly.set(weekKey, bucket);
 
-      if (hours > 10) issues.push({
+      if (hours > rules.maxDaily + rules.overtime) issues.push({
         rule: 'horas-extras', severity: 'warning', member: member.name, date: shift.date,
-        message: `Jornada de ${Math.round(hours)}h em ${shift.title}; limite diário é 8h + 2h extras`,
+        message: `Jornada de ${Math.round(hours)}h em ${shift.title}; limite diário é ${rules.maxDaily}h + ${rules.overtime}h extras`,
       });
-      if (hours > 6) issues.push({
+      if (hours > rules.breakAfter) issues.push({
         rule: 'intervalo', severity: 'info', member: member.name, date: shift.date,
-        message: 'Jornada acima de 6h: registrar intervalo mínimo de 1h (CLT art. 71)',
+        message: `Jornada acima de ${rules.breakAfter}h: registrar intervalo mínimo de 1h (CLT art. 71)`,
       });
       if (previous) {
         const endsAt = new Date(`${previous.date}T${previous.end_time}:00`);
@@ -241,9 +268,9 @@ function getCompliance(month, extraShifts = new Map()) {
           rule: 'sobreposicao', severity: 'critical', member: member.name, date: shift.date,
           message: `Turno sobreposto ao anterior (${previous.title})`,
         });
-        else if (gap < 11) issues.push({
+        else if (gap < rules.minRest) issues.push({
           rule: 'interjornada', severity: 'critical', member: member.name, date: shift.date,
-          message: `Apenas ${gap.toFixed(1)}h entre turnos; o mínimo é 11h`,
+          message: `Apenas ${gap.toFixed(1)}h entre turnos; o mínimo é ${rules.minRest}h`,
         });
       }
       const previousDay = run.length ? new Date(`${run[run.length - 1]}T12:00:00`) : null;
@@ -253,7 +280,7 @@ function getCompliance(month, extraShifts = new Map()) {
       previous = shift;
     }
 
-    if (maxRun >= 6) issues.push({
+    if (maxRun >= rules.maxWorked7 + 1) issues.push({
       rule: 'descanso-semanal', severity: 'critical', member: member.name, date: range.from,
       message: `${maxRun} dias consecutivos escalados; a regra geral prevê 2 dias de repouso semanal`,
     });
@@ -265,10 +292,10 @@ function getCompliance(month, extraShifts = new Map()) {
         day.setDate(start.getDate() - offset);
         if (workedDates.has(`${day.getFullYear()}-${String(day.getMonth() + 1).padStart(2, '0')}-${String(day.getDate()).padStart(2, '0')}`)) worked += 1;
       }
-      if (worked > 5) {
+      if (worked > rules.maxWorked7) {
         issues.push({
           rule: 'descanso-semanal', severity: 'critical', member: member.name, date,
-          message: `${worked} dias trabalhados em 7; devem ser no máximo 5 (2 repousos semanais)`,
+          message: `${worked} dias trabalhados em 7; o máximo configurado é ${rules.maxWorked7}`,
         });
         break;
       }
@@ -286,7 +313,7 @@ function getCompliance(month, extraShifts = new Map()) {
     warning: issues.filter((issue) => issue.severity === 'warning').length,
     info: issues.filter((issue) => issue.severity === 'info').length,
   };
-  return { month: range.from.slice(0, 7), weeklyLimit, total: issues.length, counts, issues: issues.slice(0, 400) };
+  return { month: range.from.slice(0, 7), weeklyLimit, rules, total: issues.length, counts, issues: issues.slice(0, 400) };
 }
 
 function checkDraftShift(body) {
@@ -319,6 +346,11 @@ function logActivity(req, action, detail = '') {
   const agent = asText(req.headers['user-agent'], 160);
   db.prepare('INSERT INTO activity_log (user_id, user_name, action, detail, ip, user_agent) VALUES (?, ?, ?, ?, ?, ?)')
     .run(user.id, user.name, action, asText(detail, 300), ip, agent);
+}
+
+function notifyUser(userId, message) {
+  if (!userId) return;
+  db.prepare('INSERT INTO notifications (user_id, message) VALUES (?, ?)').run(userId, asText(message, 240));
 }
 
 function todayISO() {
@@ -394,6 +426,11 @@ async function handleApi(req, res, url) {
     || (route === '/api/summary' && method === 'GET')
     || (route === '/api/settings' && method === 'GET')
     || (route === '/api/my-shifts' && method === 'GET')
+    || (/^\/api\/shifts\/\d+\/swap$/.test(route) && method === 'POST')
+    || (route === '/api/swaps' && method === 'GET')
+    || (route === '/api/team-options' && method === 'GET')
+    || (route === '/api/notifications' && method === 'GET')
+    || (/^\/api\/notifications\/\d+\/read$/.test(route) && method === 'PUT')
     || (/^\/api\/my-shifts\/\d+\/confirm$/.test(route) && method === 'PUT');
   if (user.role !== 'admin' && !employeeAllowed) throw fail(403, 'Área restrita a administradores');
 
@@ -624,6 +661,146 @@ async function handleApi(req, res, url) {
   if (route === '/api/compliance/check' && method === 'POST') {
     auth.requireAdmin(req);
     return sendJson(res, 200, { data: checkDraftShift(await readJson(req)) });
+  }
+  if (route === '/api/compliance/rules' && method === 'GET') {
+    return sendJson(res, 200, { data: getRules() });
+  }
+  if (route === '/api/compliance/rules' && method === 'PUT') {
+    auth.requireAdmin(req);
+    const body = await readJson(req);
+    const numeric = ['hoursBefore', 'hours2026', 'hours2027', 'minRest', 'maxWorked7', 'maxDaily', 'overtime', 'breakAfter'];
+    const keys = {
+      hoursBefore: 'rule_hours_before', hours2026: 'rule_hours_2026', hours2027: 'rule_hours_2027',
+      minRest: 'rule_min_rest', maxWorked7: 'rule_max_worked_7', maxDaily: 'rule_max_daily',
+      overtime: 'rule_overtime_daily', breakAfter: 'rule_break_after', source: 'rule_source',
+    };
+    const update = db.prepare('INSERT INTO settings (key, value) VALUES (?, ?) ON CONFLICT(key) DO UPDATE SET value = excluded.value');
+    for (const field of numeric) {
+      if (body[field] === undefined) continue;
+      const value = Number(body[field]);
+      if (!Number.isFinite(value) || value <= 0 || value > 200) throw fail(400, `Valor inválido: ${field}`);
+      update.run(keys[field], String(value));
+    }
+    if (body.source !== undefined) update.run(keys.source, asText(body.source, 120));
+    logActivity(req, 'rules.update', 'Regras de conformidade atualizadas');
+    return sendJson(res, 200, { data: getRules() });
+  }
+  if (route === '/api/compliance/publish' && method === 'POST') {
+    auth.requireAdmin(req);
+    const body = await readJson(req);
+    const month = monthRange(body.month) ? body.month : currentMonth();
+    const snapshot = {
+      month,
+      rules: getRules(),
+      compliance: getCompliance(month),
+      summary: getSummary(month),
+      published_at: new Date().toISOString(),
+    };
+    const text = JSON.stringify(snapshot);
+    const hash = crypto.createHash('sha256').update(text).digest('hex');
+    const result = db.prepare('INSERT INTO published_schedules (month, payload, hash, author) VALUES (?, ?, ?, ?)')
+      .run(month, text, hash, user.name);
+    logActivity(req, 'schedule.publish', `${month} · hash ${hash.slice(0, 12)}`);
+    return sendJson(res, 201, { data: { id: Number(result.lastInsertRowid), month, hash, author: user.name, published_at: snapshot.published_at } });
+  }
+  if (route === '/api/compliance/published' && method === 'GET') {
+    const month = params.get('month') || currentMonth();
+    const row = db.prepare('SELECT id, month, hash, author, created_at FROM published_schedules WHERE month = ? ORDER BY id DESC LIMIT 1').get(month);
+    return sendJson(res, 200, { data: row || null });
+  }
+  if (route === '/api/compliance/dossier' && method === 'GET') {
+    auth.requireAdmin(req);
+    const month = params.get('month') || currentMonth();
+    const published = db.prepare('SELECT * FROM published_schedules WHERE month = ? ORDER BY id DESC LIMIT 1').get(month);
+    const compliance = getCompliance(month);
+    const lines = [
+      'CUCO - DOSSIE DE CONFORMIDADE',
+      `Empresa: ${asText(companyName(), 80)}`,
+      `Mes: ${month}   Emitido em: ${new Date().toLocaleString('pt-BR')}`,
+      `Fonte da regra: ${compliance.rules.source}`,
+      `Limite semanal: ${compliance.weeklyLimit}h   Repouso minimo: ${compliance.rules.minRest}h`,
+      `Hash SHA-256: ${published?.hash || 'nao publicado'}`,
+      `Publicado por: ${published?.author || '-'} em ${published?.created_at || '-'}`,
+      '',
+      `APONTAMENTOS (${compliance.total})`,
+      ...compliance.issues.map((issue) => `${issue.date} | ${issue.member} | ${issue.rule} | ${issue.message}`).slice(0, 500),
+      '',
+      'Documento gerado automaticamente. Nao constitui parecer juridico.',
+    ];
+    const pdf = buildPdf(lines);
+    res.writeHead(200, {
+      'Content-Type': 'application/pdf',
+      'Content-Disposition': `attachment; filename="cuco-dossie-${month}.pdf"`,
+      'Content-Length': pdf.length,
+      'Cache-Control': 'no-store',
+      ...SECURITY_HEADERS,
+    });
+    return res.end(pdf);
+  }
+
+  if (route === '/api/team-options' && method === 'GET') {
+    return sendJson(res, 200, { data: db.prepare('SELECT id, name FROM members WHERE active = 1 ORDER BY name').all() });
+  }
+
+  // --- troca de turnos ---
+  const swapMatch = /^\/api\/shifts\/(\d+)\/swap$/.exec(route);
+  if (swapMatch && method === 'POST') {
+    const shift = db.prepare('SELECT * FROM shifts WHERE id = ?').get(Number(swapMatch[1]));
+    if (!shift) throw fail(404, 'Escala não encontrada');
+    if (user.role !== 'admin' && shift.member_id !== user.member_id) throw fail(403, 'Você só pode trocar os próprios turnos');
+    const body = await readJson(req);
+    const toMemberId = Number(body.to_member_id);
+    if (!db.prepare('SELECT 1 FROM members WHERE id = ?').get(toMemberId)) throw fail(400, 'Integrante destino inválido');
+    const result = db.prepare('INSERT INTO shift_swaps (shift_id, from_user_id, to_member_id) VALUES (?, ?, ?)')
+      .run(shift.id, user.id, toMemberId);
+    const targets = db.prepare('SELECT id FROM users WHERE member_id = ? AND active = 1').all(toMemberId);
+    for (const target of targets) notifyUser(target.id, `${user.name} solicitou trocar o turno de ${shift.date}`);
+    logActivity(req, 'swap.request', `Escala #${shift.id} → integrante #${toMemberId}`);
+    return sendJson(res, 201, { data: { id: Number(result.lastInsertRowid) } });
+  }
+  if (route === '/api/swaps' && method === 'GET') {
+    const where = user.role === 'admin' ? '' : 'WHERE s.from_user_id = ? OR s.to_member_id = ?';
+    const values = user.role === 'admin' ? [] : [user.id, user.member_id];
+    const rows = db.prepare(`
+      SELECT sw.*, sh.date, sh.start_time, sh.end_time, sh.title,
+        m.name AS to_member_name, u.name AS from_user_name
+      FROM shift_swaps sw
+      JOIN shifts sh ON sh.id = sw.shift_id
+      JOIN members m ON m.id = sw.to_member_id
+      JOIN users u ON u.id = sw.from_user_id
+      ${where} ORDER BY sw.id DESC LIMIT 200
+    `).all(...values);
+    return sendJson(res, 200, { data: rows });
+  }
+  const swapIdMatch = /^\/api\/swaps\/(\d+)$/.exec(route);
+  if (swapIdMatch && method === 'PUT') {
+    auth.requireAdmin(req);
+    const id = Number(swapIdMatch[1]);
+    const swap = db.prepare('SELECT * FROM shift_swaps WHERE id = ?').get(id);
+    if (!swap) throw fail(404, 'Solicitação não encontrada');
+    const { status } = await readJson(req);
+    if (!['aprovado', 'recusado'].includes(status)) throw fail(400, 'Status inválido');
+    if (status === 'aprovado') {
+      db.prepare('UPDATE shifts SET member_id = ?, status = ? WHERE id = ?').run(swap.to_member_id, 'planejado', swap.shift_id);
+      notifyUser(swap.from_user_id, `Sua troca da escala #${swap.shift_id} foi aprovada`);
+      const targets = db.prepare('SELECT id FROM users WHERE member_id = ? AND active = 1').all(swap.to_member_id);
+      for (const target of targets) notifyUser(target.id, `Você recebeu o turno da escala #${swap.shift_id}`);
+    }
+    db.prepare('UPDATE shift_swaps SET status = ? WHERE id = ?').run(status, id);
+    logActivity(req, 'swap.review', `Troca #${id}: ${status}`);
+    return sendJson(res, 200, { data: db.prepare('SELECT * FROM shift_swaps WHERE id = ?').get(id) });
+  }
+
+  // --- notificações ---
+  if (route === '/api/notifications' && method === 'GET') {
+    const rows = db.prepare('SELECT * FROM notifications WHERE user_id = ? ORDER BY id DESC LIMIT 30').all(user.id);
+    const unread = db.prepare('SELECT COUNT(*) AS total FROM notifications WHERE user_id = ? AND read = 0').get(user.id).total;
+    return sendJson(res, 200, { data: { rows, unread } });
+  }
+  const notificationMatch = /^\/api\/notifications\/(\d+)\/read$/.exec(route);
+  if (notificationMatch && method === 'PUT') {
+    db.prepare('UPDATE notifications SET read = 1 WHERE id = ? AND user_id = ?').run(Number(notificationMatch[1]), user.id);
+    return sendJson(res, 200, { ok: true });
   }
 
   if (route === '/api/settings' && method === 'GET') {

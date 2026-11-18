@@ -111,6 +111,10 @@ main { padding: 6px 34px 44px; }
   border-radius: 0 3px 3px 0; background: var(--accent);
 }
 .topbar { position: relative; }
+.bell { position: relative; width: 34px; height: 34px; border-radius: 10px; background: var(--surface); border: 1px solid var(--line); box-shadow: var(--shadow-sm); }
+.bell svg { width: 17px; height: 17px; fill: none; stroke: var(--green-700); stroke-width: 1.8; stroke-linecap: round; stroke-linejoin: round; }
+.bell-badge { position: absolute; top: -4px; right: -4px; min-width: 17px; height: 17px; border-radius: 99px; background: var(--danger); color: #fff; font-size: 9px; font-weight: 800; display: grid; place-items: center; padding: 0 4px; }
+.bell-badge.hidden { display: none; }
 .motion-toggle {
   width: 34px; height: 34px; border-radius: 10px; background: var(--surface);
   border: 1px solid var(--line); box-shadow: var(--shadow-sm); color: var(--green-700);
