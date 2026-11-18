@@ -3,6 +3,7 @@ data/*.db
 data/*.db-*
 data/.secret
 public/uploads/*
+data/uploads/*
 backups/*.db
 .opencode.rar
 .DS_Store

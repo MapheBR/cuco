@@ -112,6 +112,31 @@ test('smoke Cuco', async (t) => {
     assert.equal((await fetch(`${BASE}/api/health`)).status, 200);
   });
 
+  await t.test('direitos do titular: exportação e eliminação (LGPD art. 18)', async () => {
+    const admin = await login('admin', 'admin123');
+    const headers = {
+      Cookie: admin.cookies,
+      'Content-Type': 'application/json',
+      'X-CSRF-Token': admin.payload.data.csrf,
+    };
+    const created = await (await fetch(`${BASE}/api/users`, {
+      method: 'POST', headers,
+      body: JSON.stringify({ name: 'Titular Teste', login: 'lgpd_test', password: 'senha123', role: 'user' }),
+    })).json();
+    const owner = await login('lgpd_test', 'senha123');
+    assert.equal(owner.response.status, 200);
+    const data = await (await fetch(`${BASE}/api/me/data`, { headers: { Cookie: owner.cookies } })).json();
+    assert.equal(data.data.user.login, 'lgpd_test');
+    assert.ok(data.data.policy.base.includes('LGPD'));
+    const erased = await fetch(`${BASE}/api/me/data`, {
+      method: 'DELETE',
+      headers: { Cookie: owner.cookies, 'Content-Type': 'application/json', 'X-CSRF-Token': owner.payload.data.csrf },
+    });
+    assert.equal(erased.status, 200);
+    assert.equal((await login('lgpd_test', 'senha123')).response.status, 401);
+    await fetch(`${BASE}/api/users/${created.data.id}`, { method: 'DELETE', headers });
+  });
+
   await t.test('validador de escala responde com limites', async () => {
     const admin = await login('admin', 'admin123');
     const response = await fetch(`${BASE}/api/compliance`, { headers: { Cookie: admin.cookies } });

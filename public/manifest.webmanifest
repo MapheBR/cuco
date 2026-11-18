@@ -1,0 +1,13 @@
+{
+  "name": "Cuco — Controle de escalas",
+  "short_name": "Cuco",
+  "description": "Controle de escalas de trabalho com conformidade e auditoria.",
+  "start_url": "/",
+  "scope": "/",
+  "display": "standalone",
+  "background_color": "#F5FAF6",
+  "theme_color": "#1E8A4C",
+  "icons": [
+    { "src": "/assets/logo-claro.png", "sizes": "any", "type": "image/png", "purpose": "any maskable" }
+  ]
+}

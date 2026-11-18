@@ -1,6 +1,6 @@
-import { store } from '../store.js?v=15';
-import { api } from '../api.js?v=15';
-import { esc, statusBadge, person, formatDate, toast, confirmDelete, emptyState, memberOptions, statusOptions } from '../ui.js?v=15';
+import { store } from '../store.js?v=16';
+import { api } from '../api.js?v=16';
+import { esc, statusBadge, person, formatDate, toast, confirmDelete, emptyState, memberOptions, statusOptions, modal, closeModal } from '../ui.js?v=16';
 
 function todayISO() {
   const now = new Date();
@@ -96,21 +96,41 @@ export function render() {
 }
 
 export function mount() {
+  async function saveShift(data) {
+    if (store.editingShift) {
+      await api.put(`/api/shifts/${store.editingShift.id}`, data);
+      toast('Escala atualizada com sucesso');
+      store.editingShift = null;
+    } else {
+      await api.post('/api/shifts', data);
+      toast('Escala adicionada com sucesso');
+    }
+    window.dispatchEvent(new CustomEvent('cuco:refresh'));
+  }
+
+  function warnCompliance(issues, data) {
+    const list = issues.map((item) => `<li class="small">${esc(item.member)} · ${esc(item.message)}</li>`).join('');
+    modal('Apontamentos de conformidade', `<p class="small muted">${issues.length} apontamento(s) crítico(s) antes de salvar. Revise a escala; se deva ser mantida, o override fica registrado na auditoria.</p>
+      <ul>${list}</ul><div class="form-actions">
+      <button class="btn btn-primary" id="force-save" type="button">Salvar com aviso</button>
+      <button class="btn btn-outline" data-close-modal type="button">Voltar e corrigir</button></div>`);
+    document.getElementById('force-save').addEventListener('click', async () => {
+      closeModal();
+      try { await saveShift({ ...data, override: true }); } catch (error) { toast(error.message, 'error'); }
+    });
+  }
+
   document.getElementById('shift-form').addEventListener('submit', async (event) => {
     event.preventDefault();
     const data = Object.fromEntries(new FormData(event.currentTarget));
     data.member_id = Number(data.member_id);
     try {
-      if (store.editingShift) {
-        await api.put(`/api/shifts/${store.editingShift.id}`, data);
-        toast('Escala atualizada com sucesso');
-        store.editingShift = null;
-      } else {
-        await api.post('/api/shifts', data);
-        toast('Escala adicionada com sucesso');
-      }
-      window.dispatchEvent(new CustomEvent('cuco:refresh'));
+      const issues = await api.post('/api/compliance/check', data);
+      const critical = issues.filter((item) => item.severity === 'critical');
+      if (critical.length) return warnCompliance(critical, data);
+      await saveShift(data);
     } catch (error) {
+      if (error.issues?.length) return warnCompliance(error.issues.filter((item) => item.severity === 'critical'), data);
       toast(error.message, 'error');
     }
   });
@@ -127,7 +147,7 @@ export function mount() {
   });
 
   document.getElementById('clear-filters').addEventListener('click', () => {
-    store.filters = { from: '', to: '', member: '', status: '' };
+    store.filters = { from: '', to: '', member: '', status: '', q: '' };
     window.dispatchEvent(new CustomEvent('cuco:refresh'));
   });
 

@@ -29,7 +29,9 @@ async function request(path, options = {}) {
     if (response.status === 401 && path !== '/api/login') {
       window.dispatchEvent(new CustomEvent('cuco:unauthorized'));
     }
-    throw new Error(payload.error || 'Erro na requisição');
+    const error = new Error(payload.error || 'Erro na requisição');
+    error.issues = payload.issues;
+    throw error;
   }
   return payload.data !== undefined ? payload.data : payload;
 }

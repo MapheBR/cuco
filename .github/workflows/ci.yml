@@ -16,5 +16,7 @@ jobs:
           node-version: '22'
       - name: Checar sintaxe
         run: npm run check
+      - name: Linter
+        run: npm run lint
       - name: Testes de integração
         run: npm test

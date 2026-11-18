@@ -194,7 +194,7 @@ function getSummary(month) {
   };
 }
 
-function getCompliance(month) {
+function getCompliance(month, extraShifts = new Map()) {
   const range = monthRange(month) || monthRange(currentMonth());
   const limitFor = (date) => (date >= '2027-12-16' ? 40 : date >= '2026-12-16' ? 42 : 44);
   const weeklyLimit = limitFor(range.from);
@@ -206,6 +206,8 @@ function getCompliance(month) {
       SELECT date, start_time, end_time, title FROM shifts
       WHERE member_id = ? AND date BETWEEN ? AND ? ORDER BY date ASC, start_time ASC
     `).all(member.id, range.from, range.to);
+    if (extraShifts.has(member.id)) rows.push({ ...extraShifts.get(member.id), title: extraShifts.get(member.id).title || 'Escala' });
+    rows.sort((a, b) => (a.date + a.start_time).localeCompare(b.date + b.start_time));
     const weekly = new Map();
     const workedDates = new Set();
     let run = [];
@@ -287,6 +289,15 @@ function getCompliance(month) {
   return { month: range.from.slice(0, 7), weeklyLimit, total: issues.length, counts, issues: issues.slice(0, 400) };
 }
 
+function checkDraftShift(body) {
+  const data = validateShift(body);
+  const month = data.date.slice(0, 7);
+  const extras = new Map([[data.member_id, data]]);
+  const result = getCompliance(month, extras);
+  const member = db.prepare('SELECT name FROM members WHERE id = ?').get(data.member_id);
+  return result.issues.filter((issue) => issue.member === member.name);
+}
+
 function saveUpload(body) {
   const raw = String(body.data || '');
   const match = /^data:([^;,]+);base64,([A-Za-z0-9+/=\s]+)$/.exec(raw);
@@ -294,7 +305,7 @@ function saveUpload(body) {
   const buffer = Buffer.from(match[2], 'base64');
   if (!buffer.length || buffer.length > 2 * 1024 * 1024) throw fail(400, 'A imagem deve ter até 2 MB');
   if (!UPLOAD_SIGNATURES[match[1]](buffer)) throw fail(400, 'O conteúdo do arquivo não é uma imagem válida');
-  const directory = path.join(__dirname, '..', 'public', 'uploads');
+  const directory = path.join(__dirname, '..', 'data', 'uploads');
   fs.mkdirSync(directory, { recursive: true });
   const filename = `${crypto.randomUUID()}.${UPLOAD_TYPES[match[1]]}`;
   fs.writeFileSync(path.join(directory, filename), buffer);
@@ -379,6 +390,7 @@ async function handleApi(req, res, url) {
   }
   const employeeAllowed = (route === '/api/upload' && method === 'POST')
     || (route === '/api/me/profile' && method === 'PUT')
+    || (route === '/api/me/data' && ['GET', 'DELETE'].includes(method))
     || (route === '/api/summary' && method === 'GET')
     || (route === '/api/settings' && method === 'GET')
     || (route === '/api/my-shifts' && method === 'GET')
@@ -410,6 +422,33 @@ async function handleApi(req, res, url) {
     }
     logActivity(req, 'profile', 'Atualização do próprio perfil');
     return sendJson(res, 200, { data: auth.publicUser(db.prepare('SELECT * FROM users WHERE id = ?').get(user.id)) });
+  }
+
+  // --- direitos do titular (LGPD art. 18) ---
+  if (route === '/api/me/data' && method === 'GET') {
+    const member = user.member_id ? db.prepare('SELECT * FROM members WHERE id = ?').get(user.member_id) : null;
+    const shifts = member
+      ? db.prepare('SELECT * FROM shifts WHERE member_id = ? ORDER BY date DESC LIMIT 200').all(member.id)
+      : [];
+    const activity = db.prepare('SELECT action, detail, created_at FROM activity_log WHERE user_id = ? ORDER BY id DESC LIMIT 50').all(user.id);
+    return sendJson(res, 200, { data: {
+      user: auth.publicUser(user),
+      member,
+      shifts,
+      activity,
+      policy: {
+        base: 'Art. 7º, II e V da LGPD (obrigação legal e execução do contrato)',
+        retention: 'Registros de jornada: até 5 anos após o desligamento',
+        rights: 'Acesso, correção, anonimização, bloqueio e eliminação (art. 18)',
+      },
+    } });
+  }
+  if (route === '/api/me/data' && method === 'DELETE') {
+    logActivity(req, 'data.erase', 'Solicitação de exclusão (art. 18)');
+    const suffix = crypto.randomBytes(8).toString('hex');
+    db.prepare("UPDATE users SET name = 'Usuário removido', login = ?, password_hash = ?, photo = '', active = 0, token_version = token_version + 1 WHERE id = ?")
+      .run(`removido-${user.id}-${suffix}`, auth.hashPassword(crypto.randomBytes(24).toString('hex')), user.id);
+    return sendJson(res, 200, { ok: true });
   }
 
   // --- área do funcionário ---
@@ -535,7 +574,15 @@ async function handleApi(req, res, url) {
     return sendJson(res, 200, { data: rows });
   }
   if (route === '/api/shifts' && method === 'POST') {
-    const data = validateShift(await readJson(req));
+    const body = await readJson(req);
+    const data = validateShift(body);
+    const issues = checkDraftShift(data).filter((issue) => issue.severity === 'critical');
+    if (issues.length && !body.override) {
+      const blocked = fail(409, 'A escala viola regras de conformidade');
+      blocked.issues = issues;
+      throw blocked;
+    }
+    if (issues.length) logActivity(req, 'compliance.override', `${issues.length} apontamento(s) crítico(s) substituído(s)`);
     const result = db.prepare(`
       INSERT INTO shifts (member_id, date, start_time, end_time, title, status, notes)
       VALUES (?, ?, ?, ?, ?, ?, ?)
@@ -546,8 +593,17 @@ async function handleApi(req, res, url) {
   match = /^\/api\/shifts\/(\d+)$/.exec(route);
   if (match && method === 'PUT') {
     const id = Number(match[1]);
-    if (!db.prepare('SELECT 1 FROM shifts WHERE id = ?').get(id)) throw fail(404, 'Escala não encontrada');
-    const update = buildUpdate(validateShift(await readJson(req), true));
+    const current = db.prepare('SELECT * FROM shifts WHERE id = ?').get(id);
+    if (!current) throw fail(404, 'Escala não encontrada');
+    const body = await readJson(req);
+    const issues = checkDraftShift({ ...current, ...body, id }).filter((issue) => issue.severity === 'critical');
+    if (issues.length && !body.override) {
+      const blocked = fail(409, 'A escala viola regras de conformidade');
+      blocked.issues = issues;
+      throw blocked;
+    }
+    if (issues.length) logActivity(req, 'compliance.override', `Escala #${id}: ${issues.length} apontamento(s) crítico(s) substituído(s)`);
+    const update = buildUpdate(validateShift(body, true));
     db.prepare(`UPDATE shifts SET ${update.sql} WHERE id = ?`).run(...update.values, id);
     logActivity(req, 'shift.update', `Escala #${id}`);
     return sendJson(res, 200, { data: db.prepare('SELECT * FROM shifts WHERE id = ?').get(id) });
@@ -564,6 +620,10 @@ async function handleApi(req, res, url) {
   }
   if (route === '/api/compliance' && method === 'GET') {
     return sendJson(res, 200, { data: getCompliance(params.get('month') || currentMonth()) });
+  }
+  if (route === '/api/compliance/check' && method === 'POST') {
+    auth.requireAdmin(req);
+    return sendJson(res, 200, { data: checkDraftShift(await readJson(req)) });
   }
 
   if (route === '/api/settings' && method === 'GET') {
@@ -597,4 +657,4 @@ async function handleApi(req, res, url) {
   throw fail(404, 'Rota não encontrada');
 }
 
-module.exports = { handleApi };
+module.exports = { handleApi, hoursOf, getCompliance, checkDraftShift, validateShift, validateMember, validateUser, validPhoto };

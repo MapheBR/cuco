@@ -1,4 +1,4 @@
-import { api } from './api.js?v=15';
+import { api } from './api.js?v=16';
 
 export function esc(value) {
   return String(value ?? '').replace(/[&<>"']/g, (char) => ({

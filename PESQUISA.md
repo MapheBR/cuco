@@ -163,3 +163,28 @@ Não pivotar. Melhorias restantes, em ordem:
 5. **Regras configuráveis por convenção/categoria** e dossiê de conformidade em PDF com hash — transforma o validador em prova defensável.
 6. **Monetização**: freemium por empresa/unidade até ~10 funcionários, cobrança via Pix recorrente, faixa R$ 50–130/mês; cobrar por recurso (templates, trocas, notificações, multunidade), não por funcionário.
 7. **Engenharia**: linter + cobertura no CI, fixar versão do Node e planejar saída do `node:sqlite` experimental; mover uploads fora do webroot com handler autenticado.
+
+## 9. Reavaliação após as correções (18/11/2026)
+
+| Dimensão | Antes | Agora | Motivo |
+| --- | --- | --- | --- |
+| Técnica | 8 | **9/10** | Uploads fora do webroot, validação preventiva, CI + linter, 13 testes. Desconto: `node:sqlite` ainda experimental. |
+| Project Health | 7 | **9/10** | Testes de integração + unidade, ESLint limpo, GitHub Actions, Docker Compose, `.nvmrc`, documentação ampliada. Falta cobertura medida e CD automático. |
+| Risco (maior = menos risco) | 6 | **8/10** | Camada LGPD (art. 18), conformidade preventiva com override auditado, sessão revogável, DoS corrigido. Restam senhas padrão e runtime experimental. |
+| Inovação | 7 | **8/10** | Validador preventivo + auditoria como evidência. Ainda sem regras configuráveis por convenção e dossiê PDF. |
+| Comercial | 5 | **5/10** | **Não muda com código.** Modelo de receita, pricing e tração seguem como `insufficient data`. |
+| Eficiência de recursos | 8 | **8/10** | Continua enxuta; PWA e notificações exigem semanas. |
+
+**Oportunidade revisada: 7,6/10. Health: 9/10.**
+
+### Por que não 10/10 (honestamente)
+- **Comercial 10/10 exige evidência de mercado**: clientes pagantes, preço testado, retenção. Nenhuma linha de código produz isso; é preciso piloto com 3–5 empresas e dados reais.
+- **Health 10/10 exige cobertura medida, CD com deploy automático e bus factor > 1** (segundo desenvolvedor ou revisão externa).
+- **Risco 10/10 exige troca obrigatória das senhas padrão, saída do `node:sqlite` experimental e parecer jurídico validado** sobre a matriz EC 141/2026.
+- **Inovação 10/10 exige o dossiê PDF com hash e regras configuráveis por convenção** — ainda no roadmap.
+
+### Para chegar a 10/10 (plano restante)
+1. Piloto com empresas reais + definição de preço e cobrança via Pix recorrente → resolve Comercial.
+2. Cobertura de testes (`node --test --experimental-test-coverage`) e CD com deploy automático → resolve Health.
+3. Troca obrigatória de senha no primeiro login e migração para driver SQLite estável → resolve Risco.
+4. Regras configuráveis por convenção + dossiê de conformidade em PDF com hash, revisados por advogado/sindicato → resolve Inovação e o último risco jurídico.

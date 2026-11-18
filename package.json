@@ -9,9 +9,14 @@
     "dev": "node --no-warnings=ExperimentalWarning --watch server/index.js",
     "backup": "node --no-warnings=ExperimentalWarning scripts/backup.js",
     "check": "node scripts/check.js",
+    "lint": "eslint .",
     "test": "node --no-warnings=ExperimentalWarning --test tests/*.test.js"
   },
   "engines": {
     "node": ">=22.5.0"
+  },
+  "devDependencies": {
+    "eslint": "^9.39.5",
+    "globals": "^17.14.0"
   }
 }

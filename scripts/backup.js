@@ -2,7 +2,6 @@
 
 const { DatabaseSync } = require('node:sqlite');
 const fs = require('node:fs');
-const os = require('node:os');
 const path = require('node:path');
 
 const source = process.env.DB_PATH || path.join(__dirname, '..', 'data', 'cuco.db');

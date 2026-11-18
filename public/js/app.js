@@ -1,15 +1,16 @@
-import { store, loadMembers, loadUsers, loadAudit, loadCompliance, loadMyShifts, loadSummary, loadSettings, loadShifts } from './store.js?v=15';
-import { api } from './api.js?v=15';
-import { mascotSvg, mascotMood, initMascotInteractions } from './mascot.js?v=15';
-import { loadingState, errorState, toast, confetti, modal, closeModal, photoField, bindPhotoField } from './ui.js?v=15';
-import { mountLogin } from './views/login.js?v=15';
-import * as dashboard from './views/dashboard.js?v=15';
-import * as shifts from './views/shifts.js?v=15';
-import * as team from './views/team.js?v=15';
-import * as users from './views/users.js?v=15';
-import * as audit from './views/audit.js?v=15';
-import * as compliance from './views/compliance.js?v=15';
-import * as settings from './views/settings.js?v=15';
+import { store, loadMembers, loadUsers, loadAudit, loadCompliance, loadMyShifts, loadSummary, loadSettings, loadShifts } from './store.js?v=16';
+import { api } from './api.js?v=16';
+import { mascotSvg, initMascotInteractions } from './mascot.js?v=16';
+import { loadingState, errorState, toast, confetti, modal, closeModal, photoField, bindPhotoField, confirmDelete } from './ui.js?v=16';
+import { mountLogin } from './views/login.js?v=16';
+import * as dashboard from './views/dashboard.js?v=16';
+import * as shifts from './views/shifts.js?v=16';
+import * as team from './views/team.js?v=16';
+import * as users from './views/users.js?v=16';
+import * as audit from './views/audit.js?v=16';
+import * as compliance from './views/compliance.js?v=16';
+import * as settings from './views/settings.js?v=16';
+import * as privacy from './views/privacy.js?v=16';
 
 const VIEWS = {
   dashboard: { module: dashboard, title: 'Visão geral', eyebrow: 'PAINEL' },
@@ -19,7 +20,10 @@ const VIEWS = {
   compliance: { module: compliance, title: 'Conformidade', eyebrow: 'TRABALHO' },
   audit: { module: audit, title: 'Auditoria', eyebrow: 'SEGURANÇA' },
   settings: { module: settings, title: 'Configurações', eyebrow: 'SISTEMA' },
+  privacy: { module: privacy, title: 'Privacidade', eyebrow: 'LGPD' },
 };
+
+if ('serviceWorker' in navigator) navigator.serviceWorker.register('/sw.js').catch(() => {});
 
 const viewRoot = document.getElementById('view');
 const splash = document.getElementById('splash');
@@ -32,7 +36,8 @@ function updateHeader() {
   document.getElementById('eyebrow').textContent = VIEWS[store.view].eyebrow;
   const isAdmin = store.user?.role === 'admin';
   document.querySelectorAll('.nav-item').forEach((item) => {
-    item.classList.toggle('hidden', !isAdmin && item.dataset.view !== 'dashboard');
+    const allowed = isAdmin || ['dashboard', 'privacy'].includes(item.dataset.view);
+    item.classList.toggle('hidden', !allowed);
     item.classList.toggle('active', item.dataset.view === store.view);
   });
 }
@@ -61,7 +66,7 @@ async function loadViewData() {
 
 async function refresh() {
   if (!store.user) return showLogin();
-  if (store.user.role !== 'admin' && store.view !== 'dashboard') store.view = 'dashboard';
+  if (store.user.role !== 'admin' && !['dashboard', 'privacy'].includes(store.view)) store.view = 'dashboard';
   const current = VIEWS[store.view];
   updateHeader();
   viewRoot.innerHTML = loadingState();
@@ -79,7 +84,7 @@ async function refresh() {
 
 function go(view) {
   if (!VIEWS[view] || !store.user) return;
-  if (store.user.role !== 'admin' && view !== 'dashboard') {
+  if (store.user.role !== 'admin' && !['dashboard', 'privacy'].includes(view)) {
     toast('Seu perfil tem acesso apenas ao painel', 'error');
     return;
   }
@@ -99,6 +104,8 @@ function openProfile() {
     ${photoField(user.photo)}
     <div class="field full form-actions"><button class="btn btn-primary" type="submit">Salvar perfil</button>
       <button class="btn btn-outline" data-close-modal type="button">Cancelar</button></div>
+    <div class="field full form-actions"><button class="btn btn-ghost btn-sm" id="export-my-data" type="button">↓ Exportar meus dados</button>
+      <button class="btn btn-danger btn-sm" id="erase-my-data" type="button">Excluir meus dados</button></div>
   </form>`);
   bindPhotoField();
   document.querySelector('.modal [data-close-modal]').addEventListener('click', closeModal);
@@ -113,6 +120,34 @@ function openProfile() {
     } catch (error) {
       window.dispatchEvent(new CustomEvent('cuco:toast', { detail: { message: error.message, type: 'error' } }));
     }
+  });
+
+  document.getElementById('export-my-data').addEventListener('click', async () => {
+    try {
+      const data = await api.get('/api/me/data');
+      const blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' });
+      const link = document.createElement('a');
+      link.href = URL.createObjectURL(blob);
+      link.download = `cuco-meus-dados-${new Date().toISOString().slice(0, 10)}.json`;
+      link.click();
+      URL.revokeObjectURL(link.href);
+      toast('Seus dados foram exportados');
+    } catch (error) {
+      toast(error.message, 'error');
+    }
+  });
+
+  document.getElementById('erase-my-data').addEventListener('click', () => {
+    confirmDelete('a sua conta e seus dados pessoais', async () => {
+      try {
+        await api.del('/api/me/data');
+        store.user = null;
+        window.location.hash = '';
+        showLogin();
+      } catch (error) {
+        toast(error.message, 'error');
+      }
+    });
   });
 }
 
@@ -132,7 +167,7 @@ async function enterApp() {
   updateUserChip();
   const initial = window.location.hash.slice(1);
   store.view = VIEWS[initial] ? initial : 'dashboard';
-  if (store.user.role !== 'admin') store.view = 'dashboard';
+  if (store.user.role !== 'admin' && !['dashboard', 'privacy'].includes(store.view)) store.view = 'dashboard';
   await refresh();
 }
 

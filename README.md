@@ -35,6 +35,8 @@ O funcionário é vinculado a um integrante da equipe. No cadastro de usuário (
 - **Conformidade**: validador automático de escala (jornada semanal, 2 dias de repouso, 11 h entre turnos, intervalo de 1 h e horas extras), com severidades e exportação CSV. Apontamentos, não parecer jurídico.
 - Auditoria: trilha de login, logout, criações, edições, exclusões e alterações de configuração, com filtro e exportação.
 - Configurações gerais: empresa, contato, horários padrão e dias de aviso.
+- Privacidade: aviso LGPD e exportação/exclusão dos próprios dados pelo perfil.
+- PWA: instalável no celular, com cache offline para leitura do painel e das escalas.
 
 **Funcionário**
 - Dashboard restrito com próximas escalas, horas, turnos confirmados e próximo turno.
@@ -55,9 +57,9 @@ Arquivo SQLite local em `data/cuco.db`, criado e populado na primeira execução
 
 Tabelas: `members`, `shifts`, `settings`, `users`, `activity_log`. Senhas com hash **scrypt + salt**; sessão em cookie `HttpOnly` assinado com HMAC; **CSRF double-submit** em todas as mutações; rate limit de login; cookie `Secure` automático em produção. Uploads validam MIME, assinatura da imagem e tamanho (2 MB).
 
-Respostas HTTP com `Content-Security-Policy`, `X-Content-Type-Options`, `X-Frame-Options` e `Referrer-Policy`. A auditoria registra IP e user-agent.
+Respostas HTTP com `Content-Security-Policy`, `X-Content-Type-Options`, `X-Frame-Options` e `Referrer-Policy`. A auditoria registra IP e user-agent (`x-forwarded-for` só é aceito com `TRUST_PROXY=1`). Fotos ficam em `data/uploads/`, fora do webroot, servidas por handler autenticado. Conformidade é preventiva: salvar uma escala com apontamento crítico exige override auditado.
 
-Comandos úteis: `npm run check` (sintaxe de todos os `.js`), `npm test` (7 testes de health, RBAC, CSRF, revogação de sessão, upload e conformidade) e `npm run backup` (`VACUUM INTO`, mantendo os 7 backups mais recentes em `backups/`). O GitHub Actions executa `check` e `test` a cada push em `main`.
+Comandos úteis: `npm run check` (sintaxe), `npm run lint` (ESLint), `npm test` (13 testes de integração e unidade) e `npm run backup` (`VACUUM INTO`, 7 cópias). O GitHub Actions roda `check`, `lint` e `test` a cada push em `main`. Para produção: `docker compose up -d --build` (defina `SESSION_SECRET`).
 
 ## API
 
@@ -67,9 +69,11 @@ Comandos úteis: `npm run check` (sintaxe de todos os `.js`), `npm test` (7 test
 | POST | `/api/login` · `/api/logout` | público / autenticado |
 | GET | `/api/me` · `/api/summary` · `/api/settings` (leitura) · `/api/my-shifts` | autenticado |
 | PUT | `/api/me/profile` · `/api/my-shifts/:id/confirm` | autenticado |
+| GET/DELETE | `/api/me/data` | autenticado (LGPD art. 18) |
 | POST | `/api/upload` | autenticado |
 | CRUD | `/api/members` · `/api/shifts` · `/api/users` | admin |
 | GET | `/api/compliance?month=YYYY-MM` | admin |
+| POST | `/api/compliance/check` (prévia preventiva) | admin |
 | GET | `/api/audit?q=&limit=` | admin |
 | PUT | `/api/settings` | admin |
 
