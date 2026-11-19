@@ -5,6 +5,7 @@ data/.secret
 public/uploads/*
 data/uploads/*
 backups/*.db
+videos/frames/
 .opencode.rar
 .DS_Store
 *.log

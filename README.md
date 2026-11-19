@@ -92,6 +92,10 @@ Comandos úteis: `npm run check` (sintaxe), `npm run lint` (ESLint), `npm test` 
 | GET | `/api/audit?q=&limit=` | admin |
 | PUT | `/api/settings` | admin |
 
+## Vídeo de apresentação
+
+`videos/cuco-linkedin.mp4` — 1 minuto, 1280×720, H.264/yuv420p, pronto para LinkedIn. Gerado por `scripts/make-video.ps1` (frames + `ffmpeg-static`).
+
 ## Publicar
 
 1. Copie a pasta para o servidor e rode `npm start` (ou PM2/systemd).
