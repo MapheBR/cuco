@@ -93,11 +93,11 @@ Competências: Node.js · SQLite · JavaScript · API REST · Segurança
 - [x] Headline atualizado (verificado no perfil)
 - [x] Sobre reescrito (verificado no perfil)
 - [x] Competências técnicas adicionadas: JavaScript, Node.js e SQLite (verificado na lista de competências)
-- [ ] Cuco cadastrado em Projetos — tentativa interrompida quando a sessão do navegador expirou
-- [ ] "Disponível para" preenchido
-- [ ] Post duplicado removido
-- [ ] 2 recomendações solicitadas
-- [ ] Post do Cuco fixado no topo do perfil
+- [x] Cuco cadastrado em Projetos (verificado em `/details/projects/`)
+- [x] "Disponível para" preenchido: Buscando emprego, visível apenas para recrutadores
+- [x] Post duplicado removido
+- [x] Post do Cuco fixado no topo do perfil
+- [ ] 2 recomendações solicitadas (depende de outras pessoas)
 - [ ] Foto/banner revisados
 
-> A sessão do LinkedIn expirou durante a aplicação. As alterações já salvas no servidor permanecem. Para concluir, entre novamente no LinkedIn e retome os itens pendentes.
+> A sessão expirou uma vez durante a aplicação; após reentrar, os itens acima foram concluídos e verificados. Recomendações e avatar/banner dependem de decisão sua.
