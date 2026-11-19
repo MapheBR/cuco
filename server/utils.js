@@ -33,14 +33,18 @@ function fail(status, message) {
 function readJson(req) {
   return new Promise((resolve, reject) => {
     let raw = '';
+    let tooLarge = false;
     req.on('data', (chunk) => {
+      if (tooLarge) return;
       raw += chunk;
-      if (raw.length > MAX_BODY) {
+      if (Buffer.byteLength(raw) > MAX_BODY) {
+        tooLarge = true;
+        raw = '';
         reject(fail(413, 'Payload muito grande'));
-        req.destroy();
       }
     });
     req.on('end', () => {
+      if (tooLarge) return;
       if (!raw.trim()) return resolve({});
       try {
         const parsed = JSON.parse(raw);
@@ -61,7 +65,9 @@ function asText(value, max = 120) {
 }
 
 function isDate(value) {
-  return /^\d{4}-\d{2}-\d{2}$/.test(value || '') && !Number.isNaN(Date.parse(`${value}T00:00:00`));
+  if (!/^\d{4}-\d{2}-\d{2}$/.test(value || '')) return false;
+  const date = new Date(`${value}T00:00:00Z`);
+  return !Number.isNaN(date.getTime()) && date.toISOString().slice(0, 10) === value;
 }
 
 function isTime(value) {

@@ -233,7 +233,7 @@ function getRules() {
   };
 }
 
-function getCompliance(month, extraShifts = new Map()) {
+function getCompliance(month, extraShifts = new Map(), excludeShiftId = null) {
   const range = monthRange(month) || monthRange(currentMonth());
   const rules = getRules();
   const limitFor = (date) => (date >= '2027-12-16' ? rules.hours2027 : date >= '2026-12-16' ? rules.hours2026 : rules.hoursBefore);
@@ -244,8 +244,9 @@ function getCompliance(month, extraShifts = new Map()) {
   for (const member of members) {
     const rows = db.prepare(`
       SELECT date, start_time, end_time, title FROM shifts
-      WHERE member_id = ? AND date BETWEEN ? AND ? ORDER BY date ASC, start_time ASC
-    `).all(member.id, range.from, range.to);
+      WHERE member_id = ? AND date BETWEEN ? AND ? ${excludeShiftId ? 'AND id != ?' : ''}
+      ORDER BY date ASC, start_time ASC
+    `).all(...(excludeShiftId ? [member.id, range.from, range.to, excludeShiftId] : [member.id, range.from, range.to]));
     if (extraShifts.has(member.id)) rows.push({ ...extraShifts.get(member.id), title: extraShifts.get(member.id).title || 'Escala' });
     rows.sort((a, b) => (a.date + a.start_time).localeCompare(b.date + b.start_time));
     const weekly = new Map();
@@ -329,11 +330,11 @@ function getCompliance(month, extraShifts = new Map()) {
   return { month: range.from.slice(0, 7), weeklyLimit, rules, total: issues.length, counts, issues: issues.slice(0, 400) };
 }
 
-function checkDraftShift(body) {
+function checkDraftShift(body, excludeShiftId = null) {
   const data = validateShift(body);
   const month = data.date.slice(0, 7);
   const extras = new Map([[data.member_id, data]]);
-  const result = getCompliance(month, extras);
+  const result = getCompliance(month, extras, excludeShiftId);
   const member = db.prepare('SELECT name FROM members WHERE id = ?').get(data.member_id);
   return result.issues.filter((issue) => issue.member === member.name);
 }
@@ -515,7 +516,8 @@ async function handleApi(req, res, url) {
     }
     if (Object.keys(data).length) {
       const update = buildUpdate(data);
-      db.prepare(`UPDATE users SET ${update.sql} WHERE id = ?`).run(...update.values, user.id);
+      const revoke = body.password ? ', token_version = token_version + 1' : '';
+      db.prepare(`UPDATE users SET ${update.sql}${revoke} WHERE id = ?`).run(...update.values, user.id);
     }
     logActivity(req, 'profile', 'Atualização do próprio perfil');
     return sendJson(res, 200, { data: auth.publicUser(db.prepare('SELECT * FROM users WHERE id = ?').get(user.id)) });
@@ -567,6 +569,9 @@ async function handleApi(req, res, url) {
     const id = Number(confirmMatch[1]);
     const shift = db.prepare('SELECT * FROM shifts WHERE id = ?').get(id);
     if (!shift || shift.member_id !== user.member_id) throw fail(404, 'Escala não encontrada');
+    if (shift.date < todayISO() || ['concluido', 'falta'].includes(shift.status)) {
+      throw fail(409, 'Não é possível confirmar uma escala encerrada');
+    }
     db.prepare("UPDATE shifts SET status = 'confirmado' WHERE id = ?").run(id);
     logActivity(req, 'confirm', `Escala #${id} confirmada`);
     return sendJson(res, 200, { data: db.prepare('SELECT * FROM shifts WHERE id = ?').get(id) });
@@ -601,11 +606,19 @@ async function handleApi(req, res, url) {
   if (match && method === 'PUT') {
     auth.requireAdmin(req);
     const id = Number(match[1]);
-    if (!db.prepare('SELECT 1 FROM users WHERE id = ?').get(id)) throw fail(404, 'Usuário não encontrado');
+    const target = db.prepare('SELECT * FROM users WHERE id = ?').get(id);
+    if (!target) throw fail(404, 'Usuário não encontrado');
     const body = await readJson(req);
     const data = validateUser({ ...body, id }, true);
+    const nextRole = data.role ?? target.role;
+    const nextActive = data.active ?? target.active;
+    if (target.role === 'admin' && target.active === 1 && (nextRole !== 'admin' || nextActive !== 1)) {
+      const admins = db.prepare("SELECT COUNT(*) AS total FROM users WHERE role = 'admin' AND active = 1").get().total;
+      if (admins <= 1) throw fail(400, 'Não é possível rebaixar ou desativar o último administrador');
+    }
     const update = buildUpdate(data);
-    db.prepare(`UPDATE users SET ${update.sql} WHERE id = ?`).run(...update.values, id);
+    const revoke = body.password ? ', token_version = token_version + 1' : '';
+    db.prepare(`UPDATE users SET ${update.sql}${revoke} WHERE id = ?`).run(...update.values, id);
     const user = db.prepare('SELECT id, name, login, role, active, photo, member_id FROM users WHERE id = ?').get(id);
     logActivity(req, 'user.update', `Usuário #${id}`);
     return sendJson(res, 200, { data: user });
@@ -695,7 +708,7 @@ async function handleApi(req, res, url) {
     const current = db.prepare('SELECT * FROM shifts WHERE id = ?').get(id);
     if (!current) throw fail(404, 'Escala não encontrada');
     const body = await readJson(req);
-    const issues = checkDraftShift({ ...current, ...body, id }).filter((issue) => issue.severity === 'critical');
+    const issues = checkDraftShift({ ...current, ...body }, id).filter((issue) => issue.severity === 'critical');
     if (issues.length && !body.override) {
       const blocked = fail(409, 'A escala viola regras de conformidade');
       blocked.issues = issues;
@@ -813,6 +826,9 @@ async function handleApi(req, res, url) {
     const shift = db.prepare('SELECT * FROM shifts WHERE id = ?').get(Number(swapMatch[1]));
     if (!shift) throw fail(404, 'Escala não encontrada');
     if (user.role !== 'admin' && shift.member_id !== user.member_id) throw fail(403, 'Você só pode trocar os próprios turnos');
+    if (shift.date < todayISO() || ['concluido', 'falta'].includes(shift.status)) {
+      throw fail(409, 'Não é possível trocar uma escala encerrada');
+    }
     const body = await readJson(req);
     const toMemberId = Number(body.to_member_id);
     if (!db.prepare('SELECT 1 FROM members WHERE id = ?').get(toMemberId)) throw fail(400, 'Integrante destino inválido');
@@ -824,7 +840,7 @@ async function handleApi(req, res, url) {
     return sendJson(res, 201, { data: { id: Number(result.lastInsertRowid) } });
   }
   if (route === '/api/swaps' && method === 'GET') {
-    const where = user.role === 'admin' ? '' : 'WHERE s.from_user_id = ? OR s.to_member_id = ?';
+    const where = user.role === 'admin' ? '' : 'WHERE sw.from_user_id = ? OR sw.to_member_id = ?';
     const values = user.role === 'admin' ? [] : [user.id, user.member_id];
     const rows = db.prepare(`
       SELECT sw.*, sh.date, sh.start_time, sh.end_time, sh.title,

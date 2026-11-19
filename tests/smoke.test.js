@@ -241,4 +241,112 @@ test('smoke Cuco', async (t) => {
     assert.ok([40, 42, 44].includes(data.weeklyLimit));
     assert.ok(Array.isArray(data.issues));
   });
+
+  await t.test('edição de escala não acusa sobreposição consigo mesma', async () => {
+    const admin = await login('admin', 'admin123');
+    const headers = { Cookie: admin.cookies, 'Content-Type': 'application/json', 'X-CSRF-Token': admin.payload.data.csrf };
+    const created = await (await fetch(`${BASE}/api/shifts`, {
+      method: 'POST', headers,
+      body: JSON.stringify({ member_id: 4, date: '2032-03-15', start_time: '08:00', end_time: '16:00', title: 'Edição QA' }),
+    })).json();
+    const updated = await fetch(`${BASE}/api/shifts/${created.data.id}`, {
+      method: 'PUT', headers, body: JSON.stringify({ title: 'Edição QA 2' }),
+    });
+    assert.equal(updated.status, 200);
+    await fetch(`${BASE}/api/shifts/${created.data.id}`, { method: 'DELETE', headers });
+  });
+
+  await t.test('funcionário lista próprias trocas sem erro interno', async () => {
+    const employee = await login('funcionario', 'funcionario123');
+    const response = await fetch(`${BASE}/api/swaps`, { headers: { Cookie: employee.cookies } });
+    assert.equal(response.status, 200);
+    assert.ok(Array.isArray((await response.json()).data));
+  });
+
+  await t.test('último administrador não pode ser rebaixado', async () => {
+    const admin = await login('admin', 'admin123');
+    const response = await fetch(`${BASE}/api/users/1`, {
+      method: 'PUT',
+      headers: { Cookie: admin.cookies, 'Content-Type': 'application/json', 'X-CSRF-Token': admin.payload.data.csrf },
+      body: JSON.stringify({ role: 'user' }),
+    });
+    assert.equal(response.status, 400);
+  });
+
+  await t.test('data inexistente é rejeitada', async () => {
+    const admin = await login('admin', 'admin123');
+    const response = await fetch(`${BASE}/api/shifts`, {
+      method: 'POST',
+      headers: { Cookie: admin.cookies, 'Content-Type': 'application/json', 'X-CSRF-Token': admin.payload.data.csrf },
+      body: JSON.stringify({ member_id: 4, date: '2032-02-31', start_time: '08:00', end_time: '16:00', override: true }),
+    });
+    assert.equal(response.status, 400);
+  });
+
+  await t.test('escala encerrada não pode ser confirmada nem trocada', async () => {
+    const admin = await login('admin', 'admin123');
+    const headers = { Cookie: admin.cookies, 'Content-Type': 'application/json', 'X-CSRF-Token': admin.payload.data.csrf };
+    const created = await (await fetch(`${BASE}/api/shifts`, {
+      method: 'POST', headers,
+      body: JSON.stringify({ member_id: 1, date: '2026-10-10', start_time: '08:00', end_time: '12:00', status: 'concluido', override: true }),
+    })).json();
+    const employee = await login('funcionario', 'funcionario123');
+    const employeeHeaders = { Cookie: employee.cookies, 'Content-Type': 'application/json', 'X-CSRF-Token': employee.payload.data.csrf };
+    const confirm = await fetch(`${BASE}/api/my-shifts/${created.data.id}/confirm`, { method: 'PUT', headers: employeeHeaders, body: '{}' });
+    assert.equal(confirm.status, 409);
+    const swap = await fetch(`${BASE}/api/shifts/${created.data.id}/swap`, {
+      method: 'POST', headers: employeeHeaders, body: JSON.stringify({ to_member_id: 2 }),
+    });
+    assert.equal(swap.status, 409);
+    await fetch(`${BASE}/api/shifts/${created.data.id}`, { method: 'DELETE', headers });
+  });
+
+  await t.test('troca de senha revoga sessão anterior', async () => {
+    const admin = await login('admin', 'admin123');
+    const headers = { Cookie: admin.cookies, 'Content-Type': 'application/json', 'X-CSRF-Token': admin.payload.data.csrf };
+    await fetch(`${BASE}/api/users`, {
+      method: 'POST', headers,
+      body: JSON.stringify({ name: 'QA Senha', login: 'qa_senha', password: 'senha123', role: 'user' }),
+    });
+    const before = await login('qa_senha', 'senha123');
+    const changed = await fetch(`${BASE}/api/me/profile`, {
+      method: 'PUT',
+      headers: { Cookie: before.cookies, 'Content-Type': 'application/json', 'X-CSRF-Token': before.payload.data.csrf },
+      body: JSON.stringify({ password: 'senha456' }),
+    });
+    assert.equal(changed.status, 200);
+    assert.equal((await fetch(`${BASE}/api/me`, { headers: { Cookie: before.cookies } })).status, 401);
+    assert.equal((await login('qa_senha', 'senha456')).response.status, 200);
+  });
+
+  await t.test('integridade: FKs de membros e duplicidade retornam erro tratado', async () => {
+    const admin = await login('admin', 'admin123');
+    const headers = { Cookie: admin.cookies, 'Content-Type': 'application/json', 'X-CSRF-Token': admin.payload.data.csrf };
+    const department = await (await fetch(`${BASE}/api/departments`, {
+      method: 'POST', headers, body: JSON.stringify({ name: 'QA FK' }),
+    })).json();
+    const member = await (await fetch(`${BASE}/api/members`, {
+      method: 'POST', headers, body: JSON.stringify({ name: 'QA FK Member', department_id: department.data.id }),
+    })).json();
+    assert.equal((await fetch(`${BASE}/api/departments/${department.data.id}`, { method: 'DELETE', headers })).status, 200);
+    const members = await (await fetch(`${BASE}/api/members`, { headers: { Cookie: admin.cookies } })).json();
+    assert.equal(members.data.find((item) => item.id === member.data.id).department_id, null);
+    await fetch(`${BASE}/api/departments`, {
+      method: 'POST', headers, body: JSON.stringify({ name: 'QA FK' }),
+    });
+    const duplicate = await fetch(`${BASE}/api/departments`, {
+      method: 'POST', headers, body: JSON.stringify({ name: 'QA FK' }),
+    });
+    assert.equal(duplicate.status, 409);
+  });
+
+  await t.test('payload acima do limite responde 413', async () => {
+    const admin = await login('admin', 'admin123');
+    const response = await fetch(`${BASE}/api/members`, {
+      method: 'POST',
+      headers: { Cookie: admin.cookies, 'Content-Type': 'application/json', 'X-CSRF-Token': admin.payload.data.csrf },
+      body: 'x'.repeat(9 * 1024 * 1024),
+    });
+    assert.equal(response.status, 413);
+  });
 });

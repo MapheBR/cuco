@@ -37,6 +37,13 @@ const server = http.createServer(async (req, res) => {
     try {
       await handleApi(req, res, url);
     } catch (error) {
+      const constraint = error.code === 'ERR_SQLITE_ERROR' && (Number(error.errcode) & 0xff) === 19;
+      if (constraint) {
+        const duplicate = /UNIQUE constraint failed/i.test(error.message || '');
+        return sendJson(res, duplicate ? 409 : 400, {
+          error: duplicate ? 'Registro duplicado ou em uso' : 'Referência inválida',
+        });
+      }
       const status = error.status || 500;
       if (status === 500) console.error('[cuco] erro interno:', error);
       sendJson(res, status, { error: status === 500 ? 'Erro interno do servidor' : error.message, issues: error.issues });

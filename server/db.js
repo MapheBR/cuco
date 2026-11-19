@@ -152,6 +152,48 @@ function migrate() {
   const logColumns = db.prepare('PRAGMA table_info(activity_log)').all().map((column) => column.name);
   if (!logColumns.includes('ip')) db.exec("ALTER TABLE activity_log ADD COLUMN ip TEXT NOT NULL DEFAULT ''");
   if (!logColumns.includes('user_agent')) db.exec("ALTER TABLE activity_log ADD COLUMN user_agent TEXT NOT NULL DEFAULT ''");
+
+  // Versões antigas criaram members sem FKs: referências órfãs eram possíveis.
+  if (!db.prepare('PRAGMA foreign_key_list(members)').all().length) {
+    db.exec('PRAGMA foreign_keys = OFF');
+    db.exec('PRAGMA legacy_alter_table = ON');
+    db.exec('BEGIN');
+    try {
+      db.exec(`
+        UPDATE members SET department_id = NULL WHERE department_id IS NOT NULL
+          AND NOT EXISTS (SELECT 1 FROM departments WHERE id = members.department_id);
+        UPDATE members SET team_id = NULL WHERE team_id IS NOT NULL
+          AND NOT EXISTS (SELECT 1 FROM teams WHERE id = members.team_id);
+        UPDATE members SET position_id = NULL WHERE position_id IS NOT NULL
+          AND NOT EXISTS (SELECT 1 FROM positions WHERE id = members.position_id);
+        CREATE TABLE members_new (
+          id INTEGER PRIMARY KEY AUTOINCREMENT,
+          name TEXT NOT NULL,
+          role TEXT NOT NULL DEFAULT '',
+          email TEXT NOT NULL DEFAULT '',
+          color TEXT NOT NULL DEFAULT '#1E8A4C',
+          active INTEGER NOT NULL DEFAULT 1,
+          department_id INTEGER REFERENCES departments(id) ON DELETE SET NULL,
+          team_id INTEGER REFERENCES teams(id) ON DELETE SET NULL,
+          position_id INTEGER REFERENCES positions(id) ON DELETE SET NULL,
+          created_at TEXT NOT NULL DEFAULT (datetime('now')),
+          photo TEXT NOT NULL DEFAULT ''
+        );
+        INSERT INTO members_new (id, name, role, email, color, active, department_id, team_id, position_id, created_at, photo)
+          SELECT id, name, role, email, color, active, department_id, team_id, position_id, created_at, photo FROM members;
+        DROP TABLE members;
+        ALTER TABLE members_new RENAME TO members;
+      `);
+      db.exec('COMMIT');
+    } catch (error) {
+      db.exec('ROLLBACK');
+      db.exec('PRAGMA legacy_alter_table = OFF');
+      db.exec('PRAGMA foreign_keys = ON');
+      throw error;
+    }
+    db.exec('PRAGMA legacy_alter_table = OFF');
+    db.exec('PRAGMA foreign_keys = ON');
+  }
 }
 
 function seedUsers() {
