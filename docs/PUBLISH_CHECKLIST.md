@@ -2,7 +2,7 @@
 
 ## Repositório
 
-- [x] Visibilidade pública em `MapheBR/cuco`
+- [x] Visibilidade pública em `MapheBR/cuco` (concluído em 19/11/2026)
 - [x] `LICENSE` (BSL 1.1) e `NOTICE` com autoria
 - [x] `README.md` com logo, descrição, funcionalidades, telas, stack, execução e roadmap
 - [x] `CONTRIBUTING.md`, `CODE_OF_CONDUCT.md`, `CHANGELOG.md`, `SECURITY.md`
