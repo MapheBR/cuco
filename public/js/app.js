@@ -1,19 +1,19 @@
-import { store, loadMembers, loadUsers, loadAudit, loadCompliance, loadSwaps, loadNotifications, loadMyShifts, loadSummary, loadSettings, loadShifts, loadOrganization, loadInvitations } from './store.js?v=30';
-import { api } from './api.js?v=30';
-import { mascotSvg, initMascotInteractions } from './mascot.js?v=30';
-import { loadingState, errorState, toast, confetti, modal, closeModal, photoField, bindPhotoField, confirmDelete, esc } from './ui.js?v=30';
-import { mountLogin } from './views/login.js?v=30';
-import * as dashboard from './views/dashboard.js?v=30';
-import * as shifts from './views/shifts.js?v=30';
-import * as team from './views/team.js?v=30';
-import * as users from './views/users.js?v=30';
-import * as audit from './views/audit.js?v=30';
-import * as compliance from './views/compliance.js?v=30';
-import * as settings from './views/settings.js?v=30';
-import * as privacy from './views/privacy.js?v=30';
-import * as swaps from './views/swaps.js?v=30';
-import * as organization from './views/organization.js?v=30';
-import * as invitations from './views/invitations.js?v=30';
+import { store, loadMembers, loadUsers, loadAudit, loadCompliance, loadSwaps, loadNotifications, loadMyShifts, loadSummary, loadSettings, loadShifts, loadOrganization, loadInvitations } from './store.js?v=33';
+import { api } from './api.js?v=33';
+import { mascotSvg, initMascotInteractions } from './mascot.js?v=33';
+import { loadingState, errorState, toast, confetti, modal, closeModal, photoField, bindPhotoField, confirmDelete, esc } from './ui.js?v=33';
+import { mountLogin } from './views/login.js?v=33';
+import * as dashboard from './views/dashboard.js?v=33';
+import * as shifts from './views/shifts.js?v=33';
+import * as team from './views/team.js?v=33';
+import * as users from './views/users.js?v=33';
+import * as audit from './views/audit.js?v=33';
+import * as compliance from './views/compliance.js?v=33';
+import * as settings from './views/settings.js?v=33';
+import * as privacy from './views/privacy.js?v=33';
+import * as swaps from './views/swaps.js?v=33';
+import * as organization from './views/organization.js?v=33';
+import * as invitations from './views/invitations.js?v=33';
 
 const VIEWS = {
   dashboard: { module: dashboard, title: 'Visão geral', eyebrow: 'PAINEL' },

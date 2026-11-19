@@ -1,5 +1,5 @@
-import { store } from '../store.js?v=30';
-import { esc } from '../ui.js?v=30';
+import { store } from '../store.js?v=33';
+import { esc } from '../ui.js?v=33';
 
 const SECTIONS = [
   {

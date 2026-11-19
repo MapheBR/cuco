@@ -1,4 +1,4 @@
-const CACHE = 'cuco-v30';
+const CACHE = 'cuco-v33';
 const SHELL = [
   '/', '/index.html',
   '/css/theme.css', '/css/layout.css', '/css/components.css', '/css/animations.css',

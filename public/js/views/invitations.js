@@ -1,6 +1,6 @@
-import { store } from '../store.js?v=30';
-import { api } from '../api.js?v=30';
-import { esc, toast, emptyState } from '../ui.js?v=30';
+import { store } from '../store.js?v=33';
+import { api } from '../api.js?v=33';
+import { esc, toast, emptyState } from '../ui.js?v=33';
 
 const BADGE = { novo: 'planejado', usado: 'troca', aprovado: 'confirmado', recusado: 'falta' };
 

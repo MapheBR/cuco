@@ -1,7 +1,7 @@
-import { store } from '../store.js?v=30';
-import { api } from '../api.js?v=30';
-import { esc, statusBadge, formatDate, monthLabel, emptyState, countUp, donutChart, trendChart, avatar, modal, closeModal } from '../ui.js?v=30';
-import { mascotSvg, mascotMood, MASCOT_LINES } from '../mascot.js?v=30';
+import { store } from '../store.js?v=33';
+import { api } from '../api.js?v=33';
+import { esc, statusBadge, formatDate, monthLabel, emptyState, countUp, donutChart, trendChart, avatar, modal, closeModal } from '../ui.js?v=33';
+import { mascotSvg, mascotMood, MASCOT_LINES } from '../mascot.js?v=33';
 
 function shiftMonth(offset) {
   const [year, month] = store.month.split('-').map(Number);
