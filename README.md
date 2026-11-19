@@ -94,7 +94,8 @@ Comandos úteis: `npm run check` (sintaxe), `npm run lint` (ESLint), `npm test` 
 
 ## Vídeo de apresentação
 
-- `videos/cuco-linkedin-pro.mp4` — versão recomendada: 1 minuto, telas reais de desktop e mobile, mascote animado e blocos técnicos (arquitetura, conformidade, segurança). Gerada por `scripts/make-video-pro.ps1`.
+- `videos/cuco-linkedin-hd.mp4` — **versão recomendada**: 1 minuto, mockups de **computador e celular** com capturas reais, mascote com a animando e blocos técnicos. Renderizada quadro a quadro em HTML/Chrome (abordagem HyperFrames/Remotion) por `scripts/render-video.js`.
+- `videos/cuco-linkedin-pro.mp4` — versão anterior com slides e capturas. Gerada por `scripts/make-video-pro.ps1`.
 - `videos/cuco-linkedin.mp4` — versão anterior apenas com slides. Gerada por `scripts/make-video.ps1`.
 
 Ambas em 1280×720, H.264/yuv420p, prontas para LinkedIn. As capturas usadas estão em `videos/assets/`.
