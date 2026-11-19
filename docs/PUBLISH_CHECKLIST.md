@@ -16,7 +16,11 @@
 - [x] CodeQL e secret scanning habilitados
 - [x] Branch protection em `main` (PR + status checks)
 - [x] Contato de segurança: marcosfeliphe404@gmail.com
-- [ ] Revisão final do usuário antes de publicar
+- [x] Revisão final do usuário antes de publicar
+- [x] Perfil: bio, localização, link e README do perfil atualizados (19/11/2026)
+- [x] Cuco: descrição, homepage, 9 topics e 4 pins curados
+- [x] Release v1.0.0 publicada
+- [x] Agente e skill `github-profile-curator` criados
 
 ### Não publicar
 
