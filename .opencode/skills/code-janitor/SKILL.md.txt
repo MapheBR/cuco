@@ -1,0 +1,8 @@
+---
+name: code-janitor
+description: Acionar para limpar código morto, dividir arquivos grandes e melhorar a legibilidade.
+---
+# Higiene e Modularização
+1. **Regra das 200 Linhas:** Se um arquivo ultrapassar 200-250 linhas, sugira ou execute a divisão em módulos menores com responsabilidade única.
+2. **Zero Código Morto:** Remova imports não utilizados, variáveis abandonadas, `console.log` de debug e blocos comentados.
+3. **Nomes Claros:** Substitua abreviações confusas por nomes descritivos que expliquem a intenção da variável ou função.

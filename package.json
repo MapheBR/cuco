@@ -1,0 +1,22 @@
+{
+  "name": "cuco",
+  "version": "1.0.0",
+  "private": true,
+  "description": "Cuco — controle de escala de trabalho com banco local",
+  "main": "server/index.js",
+  "scripts": {
+    "start": "node --no-warnings=ExperimentalWarning server/index.js",
+    "dev": "node --no-warnings=ExperimentalWarning --watch server/index.js",
+    "backup": "node --no-warnings=ExperimentalWarning scripts/backup.js",
+    "check": "node scripts/check.js",
+    "lint": "eslint .",
+    "test": "node --no-warnings=ExperimentalWarning --test tests/*.test.js"
+  },
+  "engines": {
+    "node": ">=22.5.0"
+  },
+  "devDependencies": {
+    "eslint": "^9.39.5",
+    "globals": "^17.14.0"
+  }
+}

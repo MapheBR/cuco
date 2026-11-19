@@ -1,0 +1,10 @@
+---
+name: idea-validator
+description: Acionar quando o usuário propor uma nova ideia de produto, feature ou projeto do zero.
+---
+# Validador de Ideias e Escopo MVP
+Antes de escrever uma única linha de código para uma nova ideia, avalie criticamente:
+1. **Teste da Dor Real:** Qual problema específico isso resolve e quem pagaria ou usaria isso hoje?
+2. **Corte de Escopo (Faca no MVP):** Liste o que o usuário pediu e corte 70% das funcionalidades, mantendo apenas o fluxo principal que prova o valor da ideia.
+3. **Riscos Técnicos e de Negócio:** Aponte os 3 maiores gargalos que podem fazer esse projeto falhar ou demorar demais.
+4. **Plano de 48 Horas:** Entregue um checklist enxuto de tarefas para colocar a primeira versão testável no ar o mais rápido possível.

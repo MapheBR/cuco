@@ -1,0 +1,10 @@
+---
+name: brand-identity
+description: Acionar ao criar a identidade visual, paleta de cores, tipografia ou design system de um novo projeto.
+---
+# Criador de Identidade e Design System
+Ao definir a identidade de um produto:
+1. **Paleta Funcional:** Entregue cores em formato HEX e variáveis CSS/Tailwind organizadas em: Primária, Secundária, Acento, Fundo (Surface), Texto e Estados (Sucesso, Alerta, Erro). Garanta contraste acessível (WCAG AA).
+2. **Tipografia:** Defina 1 fonte para títulos (personalidade) e 1 para corpo/UI (legibilidade), especificando a escala de tamanhos e pesos.
+3. **Tom de Voz:** Resuma em 3 adjetivos como a interface deve se comunicar com o usuário nos botões, alertas e títulos.
+4. **Saída Pronta:** Gere imediatamente o arquivo de configuração de tema (ex: `theme.css` ou `tailwind.config`).

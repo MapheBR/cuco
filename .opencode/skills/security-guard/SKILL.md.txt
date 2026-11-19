@@ -1,0 +1,11 @@
+---
+name: security-guard
+description: Auditoria automática de segurança para rotas, autenticação, banco de dados e variáveis de ambiente.
+metadata:
+  opencode/autoinvoke: true
+---
+# Protocolo de Segurança
+1. **Zero Segredos no Código:** Nunca escreva chaves de API, tokens ou senhas fixas (hardcoded). Sempre use variáveis de ambiente e verifique se o `.env` está no `.gitignore`.
+2. **Validação e Sanitização:** Nunca confie em dados vindos do cliente. Valide tipos, tamanhos e formatos antes de salvar no banco ou executar queries.
+3. **Controle de Acesso:** Toda rota privada deve verificar autenticação e permissão (ownership) antes de retornar ou alterar qualquer dado.
+
