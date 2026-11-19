@@ -1,107 +1,78 @@
-# Cuco — Controle de escalas
+<p align="center">
+  <img src="public/assets/logo-claro.png" alt="Cuco" width="220">
+</p>
 
-Sistema web completo (front + back + banco local) para controle de escala de trabalho, com o mascote Cuco, autenticação por perfil, auditoria, animações contínuas e fotos de usuários.
+# Cuco
 
-## Rodar no localhost
+**Controle de escalas de trabalho com conformidade trabalhista, convites aprovados e auditoria — rodando localmente, sem dependências de runtime.**
 
-Requisito: **Node.js 22.5+** (usa o módulo nativo `node:sqlite`, sem dependências externas).
+O Cuco nasceu para resolver um problema comum em pequenas operações: a escala vive no WhatsApp, numa planilha ou na cabeça do gestor. Ele reúne escala, equipe, acesso e evidência em um único painel, com regras da CLT e da EC 141/2026 verificadas antes da publicação.
+
+> Copyright © 2026 Marcos Feliphe. Código sob [Business Source License 1.1](LICENSE). Nome, logo e mascote são marcas protegidas ([NOTICE](NOTICE)).
+
+## Funcionalidades
+
+- **Visão geral** — indicadores do mês, distribuição por status, ritmo semanal, carga por integrante e calendário.
+- **Escalas** — cadastro e edição com formulário, filtros, busca, tabela, troca rápida de status e exportação CSV.
+- **Conformidade** — regras configuráveis (jornada, repouso, intervalo, extras), validação preventiva no ato de salvar, selo com hash SHA-256 e dossiê em PDF.
+- **Acesso por convite** — o administrador gera um código; o usuário se cadastra com o código; o vínculo só entra em vigor após aprovação.
+- **Perfis** — administrador e funcionário, com permissões verificadas no servidor.
+- **Organização** — setores, equipes e cargos; integrantes vinculados a cada um.
+- **Trocas de turno** — solicitação do funcionário, aprovação do administrador e notificações.
+- **Auditoria** — trilha de ações com usuário, IP, user-agent e data.
+- **Privacidade (LGPD)** — aviso, exportação e exclusão dos dados do titular.
+- **PWA** — instalável no celular, com cache offline para leitura.
+
+## Telas
+
+| Painel | Escalas | Conformidade |
+| --- | --- | --- |
+| ![Painel](videos/capture/dashboard.png) | ![Escalas](videos/capture/shifts.png) | ![Conformidade](videos/capture/compliance.png) |
+
+## Stack
+
+- **Runtime:** Node.js 22.5+ (`node:http`, `node:sqlite`, `node:crypto`) — zero dependências de runtime.
+- **Banco:** SQLite local em `data/cuco.db`, com migrações incrementais.
+- **Front:** HTML, CSS e JavaScript modules (sem framework/build).
+- **Segurança:** scrypt + salt, cookie `HttpOnly` assinado, CSRF, RBAC, rate limit, validação de MIME/assinatura de imagem.
+- **Qualidade:** ESLint, `node --test`, GitHub Actions, Docker Compose.
+
+## Como rodar
 
 ```bash
 npm start
 ```
 
-Abra **http://localhost:3000**. Para reiniciar ao editar: `npm run dev`. No Windows, dê duplo clique em `iniciar.bat`.
+Abra `http://localhost:3000`. Na primeira vez, a tela **Criar administrador** é exibida — o nome já vem preenchido com Marcos Feliphe e o usuário `marcos`; use **Gerar senha principal** para criar uma senha forte.
 
-Variáveis de ambiente: `PORT`, `HOST` e `SESSION_SECRET` (defina uma chave fixa antes de publicar).
+Variáveis de ambiente (veja `.env.example`): `PORT`, `HOST`, `SESSION_SECRET`, `SECURE_COOKIES`, `TRUST_PROXY`, `DB_PATH`, `SEED_DEMO`.
 
-## Primeiro acesso (instalação limpa)
+```bash
+npm run dev      # reinício automático
+npm test         # testes de integração e unidade
+npm run check    # sintaxe de todos os .js
+npm run lint     # ESLint
+npm run backup   # cópia segura do banco (VACUUM INTO)
+```
 
-Ao abrir pela primeira vez, o sistema mostra a tela **Criar administrador** já preenchida com **Marcos Feliphe** e usuário `marcos`. Use o botão **Gerar senha principal** para criar uma senha forte de 14 caracteres (ela aparece nos dois campos). Depois disso é só cadastrar integrantes, escalas e os demais usuários. Não existem dados de exemplo por padrão — usuários, integrantes e escalas começam vazios.
+Para rodar com dados de demonstração: `SEED_DEMO=1 npm start`.
 
-Para gerar dados de demonstração (útil em testes), inicie com `SEED_DEMO=1 npm start`: são criados `admin/admin123`, `funcionario/funcionario123`, `cuco/cuco123`, 5 integrantes e escalas de exemplo.
+## Documentação
 
-## Perfis de acesso
+- [Arquitetura](docs/ARCHITECTURE.md)
+- [Pesquisa e decisões de produto](docs/RESEARCH.md)
+- [Checklist de publicação](docs/PUBLISH_CHECKLIST.md)
+- [Contribuindo](CONTRIBUTING.md) · [Código de conduta](CODE_OF_CONDUCT.md) · [Changelog](CHANGELOG.md) · [Segurança](SECURITY.md)
 
-| Perfil | Acesso |
-| --- | --- |
-| Administrador | Painel completo, escalas, equipe, trocas, usuários, auditoria, conformidade e configurações |
-| Funcionário | Somente dashboard e privacidade; vê as próprias escalas, confirma turnos e solicita trocas |
+## Roadmap
 
-O funcionário é vinculado a um integrante da equipe. No cadastro de usuário (tela de Usuários), o campo **Integrante vinculado** define quais escalas aparecem no painel dele. As rotas de administração retornam **403** para funcionários — a proteção existe no servidor, não apenas na interface.
+1. Relatórios de custo de mão de obra e horas extras.
+2. Regras trabalhistas por convenção/categoria com vigência datada.
+3. Dossiê de conformidade em PDF assinado digitalmente.
+4. Notificações externas (e-mail/Web Push) com consentimento registrado.
 
-## Funcionalidades
+## Licença e uso
 
-**Administrador**
-- Dashboard com indicadores animados (contagem progressiva), gráfico de rosca de status, tendência semanal, carga por integrante, calendário e alertas.
-- Gestão de escalas: formulário, busca, filtros, troca rápida de status na tabela e exportação CSV.
-- Gestão de equipe e usuários, com foto, senha hash e vínculo de integrante.
-- **Conformidade**: validador automático de escala (jornada semanal, 2 dias de repouso, 11 h entre turnos, intervalo de 1 h e horas extras), com severidades e exportação CSV. Apontamentos, não parecer jurídico.
-- Auditoria: trilha de login, logout, criações, edições, exclusões e alterações de configuração, com filtro e exportação.
-- Configurações gerais: empresa, contato, horários padrão e dias de aviso.
-- **Diferenciais**: regras configuráveis por convenção, selo de publicação com hash SHA-256 e dossiê de conformidade em PDF para advogado/sindicato/RT.
-- **Convites e vínculo**: o administrador gera um código válido por 7 dias; o novo usuário se cadastra informando o código; o pedido fica pendente e o administrador aprova ou recusa o vínculo.
-- **Organização**: setores, equipes e cargos separados, com níveis e vínculo com integrantes.
-- **Troca de turnos**: o funcionário solicita, o administrador aprova e as notificações avisam as partes.
-- Privacidade: aviso LGPD e exportação/exclusão dos próprios dados pelo perfil.
-- PWA: instalável no celular, com cache offline para leitura do painel e das escalas.
+Código sob **BSL 1.1**: uso não-produtivo permitido; produção exige licença comercial; conversão para **MIT em 19/11/2030**. A ideia, o nome e a mascote são protegidos — um repositório público pode ser clonado, então não publique dados reais, credenciais, clientes ou banco de produção.
 
-**Funcionário**
-- Dashboard restrito com próximas escalas, horas, turnos confirmados e próximo turno.
-- Confirmação de presença em cada escala vinculada a ele.
-- Edição do próprio perfil (nome, foto e senha) pelo menu do usuário.
-
-**Geral**
-- Splash de carregamento animado e tela de login com mascotas, blobs, anel giratório e feedback de erro.
-- Movimento contínuo e discreto no ambiente (gradiente, órbitas, brilho dos indicadores) e mascote interativo. Respeita `prefers-reduced-motion` e o botão de pausa.
-- Mascote interativo: os olhos e o corpo acompanham o cursor e, em intervalos aleatórios, ele pisca, pula, inclina a cabeça ou acena — sem loop repetitivo.
-- Botão **Pausar animações** no topo (persistido no navegador) e foco visível com contraste para navegação por teclado.
-- Logo em duas variantes: `logo-claro.png` (cuco verde + ponto amarelo, para fundo claro) e `logo-escuro.png` (cuco branco + ponto amarelo, para fundo verde).
-- Troca de página imediata, confete em ações de sucesso e estados de loading/vazio/erro em todas as telas.
-
-## Banco de dados
-
-Arquivo SQLite local em `data/cuco.db`, criado na primeira execução. Sem `SEED_DEMO`, começa vazio (apenas configurações padrão); com `SEED_DEMO=1`, recebe 5 integrantes e escalas de exemplo.
-
-Tabelas: `members`, `shifts`, `settings`, `users`, `departments`, `teams`, `positions`, `invitations`, `shift_swaps`, `notifications`, `published_schedules` e `activity_log`. Senhas com hash **scrypt + salt**; sessão em cookie `HttpOnly` assinado com HMAC; **CSRF double-submit** em todas as mutações; rate limit de login; cookie `Secure` automático em produção. Uploads validam MIME, assinatura da imagem e tamanho (2 MB).
-
-Respostas HTTP com `Content-Security-Policy`, `X-Content-Type-Options`, `X-Frame-Options` e `Referrer-Policy`. A auditoria registra IP e user-agent (`x-forwarded-for` só é aceito com `TRUST_PROXY=1`). Fotos ficam em `data/uploads/`, fora do webroot, servidas por handler autenticado. Conformidade é preventiva: salvar uma escala com apontamento crítico exige override auditado.
-
-Comandos úteis: `npm run check` (sintaxe), `npm run lint` (ESLint), `npm test` (17 testes de integração e unidade) e `npm run backup` (`VACUUM INTO`, 7 cópias). O GitHub Actions roda `check`, `lint` e `test` a cada push em `main`. Para produção: `docker compose up -d --build` (defina `SESSION_SECRET`).
-
-## API
-
-| Método | Rota | Perfil |
-| --- | --- | --- |
-| GET | `/api/health` · `/api/setup/status` | público |
-| POST | `/api/setup` (primeiro admin) · `/api/register` (com convite) | público |
-| POST | `/api/login` · `/api/logout` | público / autenticado |
-| GET | `/api/me` · `/api/summary` · `/api/settings` (leitura) · `/api/my-shifts` | autenticado |
-| PUT | `/api/me/profile` · `/api/my-shifts/:id/confirm` | autenticado |
-| GET/DELETE | `/api/me/data` | autenticado (LGPD art. 18) |
-| POST | `/api/upload` | autenticado |
-| CRUD | `/api/members` · `/api/shifts` · `/api/users` | admin |
-| GET | `/api/compliance?month=YYYY-MM` | admin |
-| POST | `/api/compliance/check` (prévia preventiva) | admin |
-| GET/PUT | `/api/compliance/rules` | autenticado / admin |
-| POST | `/api/compliance/publish` (selo SHA-256) | admin |
-| GET | `/api/compliance/published` · `/api/compliance/dossier` (PDF) | autenticado / admin |
-| POST | `/api/shifts/:id/swap` · GET `/api/swaps` · PUT `/api/swaps/:id` | autenticado / admin (aprovação) |
-| GET | `/api/notifications` · PUT `/api/notifications/:id/read` · `/api/team-options` · `/api/user-options` | autenticado |
-| GET/POST/PUT/DELETE | `/api/departments` · `/api/teams` · `/api/positions` | leitura: autenticado / escrita: admin |
-| GET/POST | `/api/invitations` · PUT `/api/invitations/:id/approve\|reject` | admin |
-| GET | `/api/audit?q=&limit=` | admin |
-| PUT | `/api/settings` | admin |
-
-## Vídeo de apresentação
-
-- `videos/cuco-linkedin-hd.mp4` — **versão recomendada**: 1 minuto, mockups de **computador e celular** com capturas reais, mascote com a animando e blocos técnicos. Renderizada quadro a quadro em HTML/Chrome (abordagem HyperFrames/Remotion) por `scripts/render-video.js`.
-- `videos/cuco-linkedin-pro.mp4` — versão anterior com slides e capturas. Gerada por `scripts/make-video-pro.ps1`.
-- `videos/cuco-linkedin.mp4` — versão anterior apenas com slides. Gerada por `scripts/make-video.ps1`.
-
-Ambas em 1280×720, H.264/yuv420p, prontas para LinkedIn. As capturas usadas estão em `videos/assets/`.
-
-## Publicar
-
-1. Copie a pasta para o servidor e rode `npm start` (ou PM2/systemd).
-2. Proxy reverso (Nginx/Caddy) apontando para a porta 3000, com HTTPS.
-3. Defina `SESSION_SECRET`, troque as senhas padrão e faça backup de `data/cuco.db` e `public/uploads/`.
+Para licença comercial: marcosfeliphe404@gmail.com.

@@ -18,7 +18,7 @@ module.exports = [
     },
   },
   {
-    files: ['public/js/**/*.js'],
+    files: ['public/js/**/*.js', 'scripts/capture-video-screens.js', 'scripts/render-video-linkedin.js'],
     languageOptions: {
       ecmaVersion: 2022,
       sourceType: 'module',

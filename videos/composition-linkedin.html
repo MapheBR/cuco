@@ -1,0 +1,440 @@
+<!doctype html><html lang="pt-BR"><head><meta charset="utf-8"><style>
+*{box-sizing:border-box}
+html,body{margin:0;width:1080px;height:1350px;overflow:hidden;background:#0A4A2B;font-family:'Segoe UI',sans-serif;color:#fff}
+#stage{position:relative;width:1080px;height:1350px;background:linear-gradient(160deg,#0E5B34,#062A18);overflow:hidden}
+#stage:before{content:'';position:absolute;width:900px;height:900px;border:2px solid rgba(255,255,255,.07);border-radius:50%;right:-460px;top:-380px}
+.top-logo{position:absolute;left:64px;top:42px;width:175px;z-index:8}
+.fixed-title{position:absolute;left:64px;top:112px;font-size:27px;font-weight:800;letter-spacing:-.4px;z-index:8;color:#fff}
+.top-logo img{width:100%;display:block}
+.scene{position:absolute;inset:0;opacity:0;display:flex;align-items:center;justify-content:center;flex-direction:column}
+.center{display:flex;flex-direction:column;align-items:center;justify-content:center;gap:20px}
+.center-logo{width:430px;display:block}
+.mascot-center{width:420px}
+.center .caption{font-size:32px;color:#D7EFDF;margin-top:10px}
+.laptop{width:940px;position:relative;filter:drop-shadow(0 30px 45px rgba(0,0,0,.4))}
+.screen{height:529px;border:13px solid #1B211E;border-bottom-width:16px;border-radius:18px;background:#fff;overflow:hidden}
+.screen img{width:100%;height:100%;object-fit:cover;object-position:top center;display:block}
+.base{height:18px;margin:0 54px;background:linear-gradient(#39423C,#151A17);border-radius:0 0 18px 18px;position:relative}
+.base span{position:absolute;width:110px;height:6px;background:#202722;border-radius:0 0 8px 8px;left:50%;transform:translateX(-50%);top:0}
+.caption{position:absolute;top:965px;width:100%;text-align:center}
+.caption strong{display:block;font-size:34px;font-weight:800;letter-spacing:-.5px}
+.caption span{display:block;font-size:21px;color:#D7EFDF;margin-top:6px}
+.center-caption{position:static;margin-top:16px}
+.center-caption span{font-size:20px}
+.mascot-corner{position:absolute;left:70px;top:1040px;width:120px;opacity:.95}
+.speech{background:#fff;color:#0E4B2B;font-size:21px;font-weight:800;padding:13px 20px;border-radius:16px;box-shadow:0 12px 26px rgba(0,0,0,.22);position:relative;max-width:590px;text-align:center;margin-top:6px;transform:scale(var(--bubble-scale,1)) translateY(var(--bubble-y,0));opacity:var(--bubble-opacity,1)}
+.speech:before{content:'';position:absolute;top:-10px;left:50%;transform:translateX(-50%);border-left:11px solid transparent;border-right:11px solid transparent;border-bottom:11px solid #fff}
+.app-speech{position:absolute;left:204px;top:1062px;max-width:620px;font-size:20px;padding:12px 18px}
+.app-speech:before{left:-8px;top:26px;transform:none;border-top:10px solid transparent;border-bottom:10px solid transparent;border-right:11px solid #fff;border-left:0}
+.scene svg{width:100%;height:auto;display:block;filter:drop-shadow(0 12px 18px rgba(0,0,0,.3))}
+.wave-arm{transform-origin:340px 380px;transform-box:view-box;transform:rotate(var(--wave,0deg))}
+.progress{position:absolute;left:64px;right:64px;bottom:48px;height:4px;background:rgba(255,255,255,.18);border-radius:4px}
+.progress span{display:block;height:100%;width:0;background:#F5B942;border-radius:4px}
+.footer{position:absolute;left:64px;bottom:20px;font-size:14px;color:rgba(255,255,255,.5)}
+</style></head><body><div id="stage">
+  <img class="top-logo" src="file:///C:/Users/Suporte Tecnova/Desktop/Cuco/public/assets/logo-escuro-compacto.png">
+  <div class="fixed-title">Cuco — Controle de escalas</div>
+  <section class="scene" data-scene="0" data-start="0" data-frames="30"><div class="center"><img class="center-logo" src="file:///C:/Users/Suporte Tecnova/Desktop/Cuco/public/assets/logo-escuro-compacto.png"><div class="mascot-center"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" role="img" aria-labelledby="title desc">
+  <title id="title">Mascote passarinho verde</title>
+  <desc id="desc">Passarinho simpático verde e branco, com olhos grandes, bico laranja e asa levantada em sinal positivo.</desc>
+  <defs>
+    <linearGradient id="green" x1=".12" y1="0" x2=".88" y2="1"><stop stop-color="#54df79"/><stop offset=".48" stop-color="#19ad59"/><stop offset="1" stop-color="#08743f"/></linearGradient>
+    <linearGradient id="wing" x1="0" y1="0" x2="1" y2="1"><stop stop-color="#4be276"/><stop offset="1" stop-color="#078044"/></linearGradient>
+    <linearGradient id="white" x1="0" y1="0" x2=".3" y2="1"><stop stop-color="#fff"/><stop offset="1" stop-color="#e8f5ed"/></linearGradient>
+    <linearGradient id="orange" x1="0" y1="0" x2="0" y2="1"><stop stop-color="#ffe16a"/><stop offset=".55" stop-color="#ff9d1b"/><stop offset="1" stop-color="#e96a12"/></linearGradient>
+    <filter id="shadow" x="-30%" y="-30%" width="160%" height="170%"><feGaussianBlur stdDeviation="9"/></filter>
+  </defs>
+  <!-- soft grounding shadow -->
+  <ellipse cx="256" cy="465" rx="126" ry="17" fill="#063e2a" opacity=".16" filter="url(#shadow)"/>
+  <!-- tail feathers -->
+  <path d="M151 335 Q91 307 80 345 Q112 383 174 381Z" fill="#087c45" stroke="#075c38" stroke-width="8" stroke-linejoin="round"/>
+  <path d="M155 357 Q94 356 94 398 Q143 416 188 384Z" fill="#159b50" stroke="#075c38" stroke-width="8" stroke-linejoin="round"/>
+  <!-- body -->
+  <path d="M157 270 Q119 325 145 394 Q168 459 256 462 Q348 462 371 391 Q394 320 350 267Z" fill="url(#green)" stroke="#075b38" stroke-width="10" stroke-linejoin="round"/>
+  <!-- belly -->
+  <path d="M177 323 Q157 375 183 419 Q207 449 260 448 Q318 447 340 412 Q363 370 335 322 Q258 347 177 323Z" fill="url(#white)"/>
+  <path d="M195 365 Q207 405 237 416" fill="none" stroke="#d8eee0" stroke-width="8" stroke-linecap="round" opacity=".8"/>
+  <!-- left wing -->
+  <path d="M157 303 Q103 312 105 366 Q110 415 172 411 Q204 404 223 365 Q197 329 157 303Z" fill="url(#wing)" stroke="#075b38" stroke-width="9" stroke-linejoin="round"/>
+  <path d="M129 361 Q154 349 184 367 M132 389 Q163 376 190 386" fill="none" stroke="#8af09d" stroke-width="7" stroke-linecap="round" opacity=".7"/>
+  <!-- raised right wing / thumbs-up -->
+  <path class="wave-arm" d="M347 315 Q389 304 403 337 Q417 371 391 405 Q369 432 337 413 Q316 399 323 373Z" fill="url(#wing)" stroke="#075b38" stroke-width="9" stroke-linejoin="round"/>
+  <path class="wave-arm" d="M355 321 Q348 283 368 253 Q381 235 395 250 Q405 263 394 291 Q422 277 435 294 Q445 310 427 326 Q447 330 445 348 Q443 365 420 369 Q434 386 419 399 Q401 415 381 396 L354 376Z" fill="url(#green)" stroke="#075b38" stroke-width="9" stroke-linejoin="round"/>
+  <path class="wave-arm" d="M391 304 Q405 298 419 306 M397 339 Q413 332 429 340 M389 372 Q403 366 416 375" fill="none" stroke="#a0f5a9" stroke-width="6" stroke-linecap="round" opacity=".8"/>
+  <!-- head -->
+  <path d="M146 215 Q139 127 202 91 Q217 48 247 76 Q269 42 293 83 Q354 91 375 151 Q399 214 365 278 Q335 326 256 326 Q174 326 145 269 Q132 243 146 215Z" fill="url(#green)" stroke="#075b38" stroke-width="10" stroke-linejoin="round"/>
+  <!-- feather crest -->
+  <path d="M210 94 Q190 54 218 43 Q239 39 251 75 Q262 39 283 50 Q302 62 289 94" fill="#49d96d" stroke="#075b38" stroke-width="8" stroke-linejoin="round"/>
+  <path d="M218 57 Q233 59 245 83 M271 62 Q278 73 278 88" fill="none" stroke="#a5f5a9" stroke-width="6" stroke-linecap="round"/>
+  <!-- face patch -->
+  <path d="M164 204 Q168 145 216 139 Q241 134 256 159 Q278 131 311 141 Q354 153 358 207 Q365 272 310 291 Q256 311 202 290 Q153 270 164 204Z" fill="url(#white)"/>
+  <!-- brows -->
+  <path d="M190 169 Q210 151 232 166 M280 165 Q304 148 325 165" fill="none" stroke="#075333" stroke-width="9" stroke-linecap="round"/>
+  <!-- eyes -->
+  <ellipse cx="214" cy="207" rx="25" ry="33" fill="#064b36"/>
+  <ellipse cx="299" cy="207" rx="25" ry="33" fill="#064b36"/>
+  <ellipse cx="216" cy="214" rx="16" ry="23" fill="#0b8d58"/>
+  <ellipse cx="297" cy="214" rx="16" ry="23" fill="#0b8d58"/>
+  <circle cx="208" cy="196" r="9" fill="#fff"/><circle cx="291" cy="196" r="9" fill="#fff"/>
+  <circle cx="224" cy="220" r="4" fill="#b9ffd0"/><circle cx="305" cy="220" r="4" fill="#b9ffd0"/>
+  <!-- beak -->
+  <path d="M244 226 Q256 216 269 226 Q290 221 313 231 Q297 250 278 255 Q257 259 239 245 Q231 236 244 226Z" fill="url(#orange)" stroke="#d9680d" stroke-width="5" stroke-linejoin="round"/>
+  <path d="M247 231 Q269 235 302 233" fill="none" stroke="#fff0a3" stroke-width="4" stroke-linecap="round"/>
+  <!-- feet -->
+  <path d="M215 448 L212 466 M212 464 Q194 465 190 477 Q207 483 221 475 Q234 485 247 477 Q242 465 222 464" fill="none" stroke="#e87917" stroke-width="9" stroke-linecap="round" stroke-linejoin="round"/>
+  <path d="M293 448 L296 466 M296 464 Q278 465 274 477 Q291 483 305 475 Q318 485 331 477 Q326 465 306 464" fill="none" stroke="#e87917" stroke-width="9" stroke-linecap="round" stroke-linejoin="round"/>
+  <!-- small cheek accents -->
+  <ellipse cx="178" cy="247" rx="10" ry="5" fill="#f5a5a0" opacity=".45"/><ellipse cx="337" cy="247" rx="10" ry="5" fill="#f5a5a0" opacity=".45"/>
+</svg>
+</div><div class="speech">Oi, eu sou o Cuco! Vamos ver o que eu faço.</div>
+       </div></section><section class="scene" data-scene="1" data-start="30" data-frames="120"><div class="laptop"><div class="screen"><img src="file:///C:/Users/Suporte Tecnova/Desktop/Cuco/videos/capture/dashboard.png"></div><div class="base"><span></span></div></div>
+       <div class="caption"><strong>Visão geral</strong><span>Escalas, horas e avisos do mês.</span></div>
+       <div class="mascot-corner"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" role="img" aria-labelledby="title desc">
+  <title id="title">Mascote passarinho verde</title>
+  <desc id="desc">Passarinho simpático verde e branco, com olhos grandes, bico laranja e asa levantada em sinal positivo.</desc>
+  <defs>
+    <linearGradient id="green" x1=".12" y1="0" x2=".88" y2="1"><stop stop-color="#54df79"/><stop offset=".48" stop-color="#19ad59"/><stop offset="1" stop-color="#08743f"/></linearGradient>
+    <linearGradient id="wing" x1="0" y1="0" x2="1" y2="1"><stop stop-color="#4be276"/><stop offset="1" stop-color="#078044"/></linearGradient>
+    <linearGradient id="white" x1="0" y1="0" x2=".3" y2="1"><stop stop-color="#fff"/><stop offset="1" stop-color="#e8f5ed"/></linearGradient>
+    <linearGradient id="orange" x1="0" y1="0" x2="0" y2="1"><stop stop-color="#ffe16a"/><stop offset=".55" stop-color="#ff9d1b"/><stop offset="1" stop-color="#e96a12"/></linearGradient>
+    <filter id="shadow" x="-30%" y="-30%" width="160%" height="170%"><feGaussianBlur stdDeviation="9"/></filter>
+  </defs>
+  <!-- soft grounding shadow -->
+  <ellipse cx="256" cy="465" rx="126" ry="17" fill="#063e2a" opacity=".16" filter="url(#shadow)"/>
+  <!-- tail feathers -->
+  <path d="M151 335 Q91 307 80 345 Q112 383 174 381Z" fill="#087c45" stroke="#075c38" stroke-width="8" stroke-linejoin="round"/>
+  <path d="M155 357 Q94 356 94 398 Q143 416 188 384Z" fill="#159b50" stroke="#075c38" stroke-width="8" stroke-linejoin="round"/>
+  <!-- body -->
+  <path d="M157 270 Q119 325 145 394 Q168 459 256 462 Q348 462 371 391 Q394 320 350 267Z" fill="url(#green)" stroke="#075b38" stroke-width="10" stroke-linejoin="round"/>
+  <!-- belly -->
+  <path d="M177 323 Q157 375 183 419 Q207 449 260 448 Q318 447 340 412 Q363 370 335 322 Q258 347 177 323Z" fill="url(#white)"/>
+  <path d="M195 365 Q207 405 237 416" fill="none" stroke="#d8eee0" stroke-width="8" stroke-linecap="round" opacity=".8"/>
+  <!-- left wing -->
+  <path d="M157 303 Q103 312 105 366 Q110 415 172 411 Q204 404 223 365 Q197 329 157 303Z" fill="url(#wing)" stroke="#075b38" stroke-width="9" stroke-linejoin="round"/>
+  <path d="M129 361 Q154 349 184 367 M132 389 Q163 376 190 386" fill="none" stroke="#8af09d" stroke-width="7" stroke-linecap="round" opacity=".7"/>
+  <!-- raised right wing / thumbs-up -->
+  <path class="wave-arm" d="M347 315 Q389 304 403 337 Q417 371 391 405 Q369 432 337 413 Q316 399 323 373Z" fill="url(#wing)" stroke="#075b38" stroke-width="9" stroke-linejoin="round"/>
+  <path class="wave-arm" d="M355 321 Q348 283 368 253 Q381 235 395 250 Q405 263 394 291 Q422 277 435 294 Q445 310 427 326 Q447 330 445 348 Q443 365 420 369 Q434 386 419 399 Q401 415 381 396 L354 376Z" fill="url(#green)" stroke="#075b38" stroke-width="9" stroke-linejoin="round"/>
+  <path class="wave-arm" d="M391 304 Q405 298 419 306 M397 339 Q413 332 429 340 M389 372 Q403 366 416 375" fill="none" stroke="#a0f5a9" stroke-width="6" stroke-linecap="round" opacity=".8"/>
+  <!-- head -->
+  <path d="M146 215 Q139 127 202 91 Q217 48 247 76 Q269 42 293 83 Q354 91 375 151 Q399 214 365 278 Q335 326 256 326 Q174 326 145 269 Q132 243 146 215Z" fill="url(#green)" stroke="#075b38" stroke-width="10" stroke-linejoin="round"/>
+  <!-- feather crest -->
+  <path d="M210 94 Q190 54 218 43 Q239 39 251 75 Q262 39 283 50 Q302 62 289 94" fill="#49d96d" stroke="#075b38" stroke-width="8" stroke-linejoin="round"/>
+  <path d="M218 57 Q233 59 245 83 M271 62 Q278 73 278 88" fill="none" stroke="#a5f5a9" stroke-width="6" stroke-linecap="round"/>
+  <!-- face patch -->
+  <path d="M164 204 Q168 145 216 139 Q241 134 256 159 Q278 131 311 141 Q354 153 358 207 Q365 272 310 291 Q256 311 202 290 Q153 270 164 204Z" fill="url(#white)"/>
+  <!-- brows -->
+  <path d="M190 169 Q210 151 232 166 M280 165 Q304 148 325 165" fill="none" stroke="#075333" stroke-width="9" stroke-linecap="round"/>
+  <!-- eyes -->
+  <ellipse cx="214" cy="207" rx="25" ry="33" fill="#064b36"/>
+  <ellipse cx="299" cy="207" rx="25" ry="33" fill="#064b36"/>
+  <ellipse cx="216" cy="214" rx="16" ry="23" fill="#0b8d58"/>
+  <ellipse cx="297" cy="214" rx="16" ry="23" fill="#0b8d58"/>
+  <circle cx="208" cy="196" r="9" fill="#fff"/><circle cx="291" cy="196" r="9" fill="#fff"/>
+  <circle cx="224" cy="220" r="4" fill="#b9ffd0"/><circle cx="305" cy="220" r="4" fill="#b9ffd0"/>
+  <!-- beak -->
+  <path d="M244 226 Q256 216 269 226 Q290 221 313 231 Q297 250 278 255 Q257 259 239 245 Q231 236 244 226Z" fill="url(#orange)" stroke="#d9680d" stroke-width="5" stroke-linejoin="round"/>
+  <path d="M247 231 Q269 235 302 233" fill="none" stroke="#fff0a3" stroke-width="4" stroke-linecap="round"/>
+  <!-- feet -->
+  <path d="M215 448 L212 466 M212 464 Q194 465 190 477 Q207 483 221 475 Q234 485 247 477 Q242 465 222 464" fill="none" stroke="#e87917" stroke-width="9" stroke-linecap="round" stroke-linejoin="round"/>
+  <path d="M293 448 L296 466 M296 464 Q278 465 274 477 Q291 483 305 475 Q318 485 331 477 Q326 465 306 464" fill="none" stroke="#e87917" stroke-width="9" stroke-linecap="round" stroke-linejoin="round"/>
+  <!-- small cheek accents -->
+  <ellipse cx="178" cy="247" rx="10" ry="5" fill="#f5a5a0" opacity=".45"/><ellipse cx="337" cy="247" rx="10" ry="5" fill="#f5a5a0" opacity=".45"/>
+</svg>
+</div><div class="speech app-speech">Tem escala hoje? Eu te mostro.</div></section><section class="scene" data-scene="2" data-start="150" data-frames="130"><div class="laptop"><div class="screen"><img src="file:///C:/Users/Suporte Tecnova/Desktop/Cuco/videos/capture/shifts.png"></div><div class="base"><span></span></div></div>
+       <div class="caption"><strong>Escala semanal</strong><span>O gestor monta os turnos em poucos cliques.</span></div>
+       <div class="mascot-corner"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" role="img" aria-labelledby="title desc">
+  <title id="title">Mascote passarinho verde</title>
+  <desc id="desc">Passarinho simpático verde e branco, com olhos grandes, bico laranja e asa levantada em sinal positivo.</desc>
+  <defs>
+    <linearGradient id="green" x1=".12" y1="0" x2=".88" y2="1"><stop stop-color="#54df79"/><stop offset=".48" stop-color="#19ad59"/><stop offset="1" stop-color="#08743f"/></linearGradient>
+    <linearGradient id="wing" x1="0" y1="0" x2="1" y2="1"><stop stop-color="#4be276"/><stop offset="1" stop-color="#078044"/></linearGradient>
+    <linearGradient id="white" x1="0" y1="0" x2=".3" y2="1"><stop stop-color="#fff"/><stop offset="1" stop-color="#e8f5ed"/></linearGradient>
+    <linearGradient id="orange" x1="0" y1="0" x2="0" y2="1"><stop stop-color="#ffe16a"/><stop offset=".55" stop-color="#ff9d1b"/><stop offset="1" stop-color="#e96a12"/></linearGradient>
+    <filter id="shadow" x="-30%" y="-30%" width="160%" height="170%"><feGaussianBlur stdDeviation="9"/></filter>
+  </defs>
+  <!-- soft grounding shadow -->
+  <ellipse cx="256" cy="465" rx="126" ry="17" fill="#063e2a" opacity=".16" filter="url(#shadow)"/>
+  <!-- tail feathers -->
+  <path d="M151 335 Q91 307 80 345 Q112 383 174 381Z" fill="#087c45" stroke="#075c38" stroke-width="8" stroke-linejoin="round"/>
+  <path d="M155 357 Q94 356 94 398 Q143 416 188 384Z" fill="#159b50" stroke="#075c38" stroke-width="8" stroke-linejoin="round"/>
+  <!-- body -->
+  <path d="M157 270 Q119 325 145 394 Q168 459 256 462 Q348 462 371 391 Q394 320 350 267Z" fill="url(#green)" stroke="#075b38" stroke-width="10" stroke-linejoin="round"/>
+  <!-- belly -->
+  <path d="M177 323 Q157 375 183 419 Q207 449 260 448 Q318 447 340 412 Q363 370 335 322 Q258 347 177 323Z" fill="url(#white)"/>
+  <path d="M195 365 Q207 405 237 416" fill="none" stroke="#d8eee0" stroke-width="8" stroke-linecap="round" opacity=".8"/>
+  <!-- left wing -->
+  <path d="M157 303 Q103 312 105 366 Q110 415 172 411 Q204 404 223 365 Q197 329 157 303Z" fill="url(#wing)" stroke="#075b38" stroke-width="9" stroke-linejoin="round"/>
+  <path d="M129 361 Q154 349 184 367 M132 389 Q163 376 190 386" fill="none" stroke="#8af09d" stroke-width="7" stroke-linecap="round" opacity=".7"/>
+  <!-- raised right wing / thumbs-up -->
+  <path class="wave-arm" d="M347 315 Q389 304 403 337 Q417 371 391 405 Q369 432 337 413 Q316 399 323 373Z" fill="url(#wing)" stroke="#075b38" stroke-width="9" stroke-linejoin="round"/>
+  <path class="wave-arm" d="M355 321 Q348 283 368 253 Q381 235 395 250 Q405 263 394 291 Q422 277 435 294 Q445 310 427 326 Q447 330 445 348 Q443 365 420 369 Q434 386 419 399 Q401 415 381 396 L354 376Z" fill="url(#green)" stroke="#075b38" stroke-width="9" stroke-linejoin="round"/>
+  <path class="wave-arm" d="M391 304 Q405 298 419 306 M397 339 Q413 332 429 340 M389 372 Q403 366 416 375" fill="none" stroke="#a0f5a9" stroke-width="6" stroke-linecap="round" opacity=".8"/>
+  <!-- head -->
+  <path d="M146 215 Q139 127 202 91 Q217 48 247 76 Q269 42 293 83 Q354 91 375 151 Q399 214 365 278 Q335 326 256 326 Q174 326 145 269 Q132 243 146 215Z" fill="url(#green)" stroke="#075b38" stroke-width="10" stroke-linejoin="round"/>
+  <!-- feather crest -->
+  <path d="M210 94 Q190 54 218 43 Q239 39 251 75 Q262 39 283 50 Q302 62 289 94" fill="#49d96d" stroke="#075b38" stroke-width="8" stroke-linejoin="round"/>
+  <path d="M218 57 Q233 59 245 83 M271 62 Q278 73 278 88" fill="none" stroke="#a5f5a9" stroke-width="6" stroke-linecap="round"/>
+  <!-- face patch -->
+  <path d="M164 204 Q168 145 216 139 Q241 134 256 159 Q278 131 311 141 Q354 153 358 207 Q365 272 310 291 Q256 311 202 290 Q153 270 164 204Z" fill="url(#white)"/>
+  <!-- brows -->
+  <path d="M190 169 Q210 151 232 166 M280 165 Q304 148 325 165" fill="none" stroke="#075333" stroke-width="9" stroke-linecap="round"/>
+  <!-- eyes -->
+  <ellipse cx="214" cy="207" rx="25" ry="33" fill="#064b36"/>
+  <ellipse cx="299" cy="207" rx="25" ry="33" fill="#064b36"/>
+  <ellipse cx="216" cy="214" rx="16" ry="23" fill="#0b8d58"/>
+  <ellipse cx="297" cy="214" rx="16" ry="23" fill="#0b8d58"/>
+  <circle cx="208" cy="196" r="9" fill="#fff"/><circle cx="291" cy="196" r="9" fill="#fff"/>
+  <circle cx="224" cy="220" r="4" fill="#b9ffd0"/><circle cx="305" cy="220" r="4" fill="#b9ffd0"/>
+  <!-- beak -->
+  <path d="M244 226 Q256 216 269 226 Q290 221 313 231 Q297 250 278 255 Q257 259 239 245 Q231 236 244 226Z" fill="url(#orange)" stroke="#d9680d" stroke-width="5" stroke-linejoin="round"/>
+  <path d="M247 231 Q269 235 302 233" fill="none" stroke="#fff0a3" stroke-width="4" stroke-linecap="round"/>
+  <!-- feet -->
+  <path d="M215 448 L212 466 M212 464 Q194 465 190 477 Q207 483 221 475 Q234 485 247 477 Q242 465 222 464" fill="none" stroke="#e87917" stroke-width="9" stroke-linecap="round" stroke-linejoin="round"/>
+  <path d="M293 448 L296 466 M296 464 Q278 465 274 477 Q291 483 305 475 Q318 485 331 477 Q326 465 306 464" fill="none" stroke="#e87917" stroke-width="9" stroke-linecap="round" stroke-linejoin="round"/>
+  <!-- small cheek accents -->
+  <ellipse cx="178" cy="247" rx="10" ry="5" fill="#f5a5a0" opacity=".45"/><ellipse cx="337" cy="247" rx="10" ry="5" fill="#f5a5a0" opacity=".45"/>
+</svg>
+</div><div class="speech app-speech">Cadastre, filtre e troque o status em um clique.</div></section><section class="scene" data-scene="3" data-start="280" data-frames="130"><div class="laptop"><div class="screen"><img src="file:///C:/Users/Suporte Tecnova/Desktop/Cuco/videos/capture/compliance.png"></div><div class="base"><span></span></div></div>
+       <div class="caption"><strong>Conformidade</strong><span>Regras da CLT e da EC 141 antes de publicar.</span></div>
+       <div class="mascot-corner"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" role="img" aria-labelledby="title desc">
+  <title id="title">Mascote passarinho verde</title>
+  <desc id="desc">Passarinho simpático verde e branco, com olhos grandes, bico laranja e asa levantada em sinal positivo.</desc>
+  <defs>
+    <linearGradient id="green" x1=".12" y1="0" x2=".88" y2="1"><stop stop-color="#54df79"/><stop offset=".48" stop-color="#19ad59"/><stop offset="1" stop-color="#08743f"/></linearGradient>
+    <linearGradient id="wing" x1="0" y1="0" x2="1" y2="1"><stop stop-color="#4be276"/><stop offset="1" stop-color="#078044"/></linearGradient>
+    <linearGradient id="white" x1="0" y1="0" x2=".3" y2="1"><stop stop-color="#fff"/><stop offset="1" stop-color="#e8f5ed"/></linearGradient>
+    <linearGradient id="orange" x1="0" y1="0" x2="0" y2="1"><stop stop-color="#ffe16a"/><stop offset=".55" stop-color="#ff9d1b"/><stop offset="1" stop-color="#e96a12"/></linearGradient>
+    <filter id="shadow" x="-30%" y="-30%" width="160%" height="170%"><feGaussianBlur stdDeviation="9"/></filter>
+  </defs>
+  <!-- soft grounding shadow -->
+  <ellipse cx="256" cy="465" rx="126" ry="17" fill="#063e2a" opacity=".16" filter="url(#shadow)"/>
+  <!-- tail feathers -->
+  <path d="M151 335 Q91 307 80 345 Q112 383 174 381Z" fill="#087c45" stroke="#075c38" stroke-width="8" stroke-linejoin="round"/>
+  <path d="M155 357 Q94 356 94 398 Q143 416 188 384Z" fill="#159b50" stroke="#075c38" stroke-width="8" stroke-linejoin="round"/>
+  <!-- body -->
+  <path d="M157 270 Q119 325 145 394 Q168 459 256 462 Q348 462 371 391 Q394 320 350 267Z" fill="url(#green)" stroke="#075b38" stroke-width="10" stroke-linejoin="round"/>
+  <!-- belly -->
+  <path d="M177 323 Q157 375 183 419 Q207 449 260 448 Q318 447 340 412 Q363 370 335 322 Q258 347 177 323Z" fill="url(#white)"/>
+  <path d="M195 365 Q207 405 237 416" fill="none" stroke="#d8eee0" stroke-width="8" stroke-linecap="round" opacity=".8"/>
+  <!-- left wing -->
+  <path d="M157 303 Q103 312 105 366 Q110 415 172 411 Q204 404 223 365 Q197 329 157 303Z" fill="url(#wing)" stroke="#075b38" stroke-width="9" stroke-linejoin="round"/>
+  <path d="M129 361 Q154 349 184 367 M132 389 Q163 376 190 386" fill="none" stroke="#8af09d" stroke-width="7" stroke-linecap="round" opacity=".7"/>
+  <!-- raised right wing / thumbs-up -->
+  <path class="wave-arm" d="M347 315 Q389 304 403 337 Q417 371 391 405 Q369 432 337 413 Q316 399 323 373Z" fill="url(#wing)" stroke="#075b38" stroke-width="9" stroke-linejoin="round"/>
+  <path class="wave-arm" d="M355 321 Q348 283 368 253 Q381 235 395 250 Q405 263 394 291 Q422 277 435 294 Q445 310 427 326 Q447 330 445 348 Q443 365 420 369 Q434 386 419 399 Q401 415 381 396 L354 376Z" fill="url(#green)" stroke="#075b38" stroke-width="9" stroke-linejoin="round"/>
+  <path class="wave-arm" d="M391 304 Q405 298 419 306 M397 339 Q413 332 429 340 M389 372 Q403 366 416 375" fill="none" stroke="#a0f5a9" stroke-width="6" stroke-linecap="round" opacity=".8"/>
+  <!-- head -->
+  <path d="M146 215 Q139 127 202 91 Q217 48 247 76 Q269 42 293 83 Q354 91 375 151 Q399 214 365 278 Q335 326 256 326 Q174 326 145 269 Q132 243 146 215Z" fill="url(#green)" stroke="#075b38" stroke-width="10" stroke-linejoin="round"/>
+  <!-- feather crest -->
+  <path d="M210 94 Q190 54 218 43 Q239 39 251 75 Q262 39 283 50 Q302 62 289 94" fill="#49d96d" stroke="#075b38" stroke-width="8" stroke-linejoin="round"/>
+  <path d="M218 57 Q233 59 245 83 M271 62 Q278 73 278 88" fill="none" stroke="#a5f5a9" stroke-width="6" stroke-linecap="round"/>
+  <!-- face patch -->
+  <path d="M164 204 Q168 145 216 139 Q241 134 256 159 Q278 131 311 141 Q354 153 358 207 Q365 272 310 291 Q256 311 202 290 Q153 270 164 204Z" fill="url(#white)"/>
+  <!-- brows -->
+  <path d="M190 169 Q210 151 232 166 M280 165 Q304 148 325 165" fill="none" stroke="#075333" stroke-width="9" stroke-linecap="round"/>
+  <!-- eyes -->
+  <ellipse cx="214" cy="207" rx="25" ry="33" fill="#064b36"/>
+  <ellipse cx="299" cy="207" rx="25" ry="33" fill="#064b36"/>
+  <ellipse cx="216" cy="214" rx="16" ry="23" fill="#0b8d58"/>
+  <ellipse cx="297" cy="214" rx="16" ry="23" fill="#0b8d58"/>
+  <circle cx="208" cy="196" r="9" fill="#fff"/><circle cx="291" cy="196" r="9" fill="#fff"/>
+  <circle cx="224" cy="220" r="4" fill="#b9ffd0"/><circle cx="305" cy="220" r="4" fill="#b9ffd0"/>
+  <!-- beak -->
+  <path d="M244 226 Q256 216 269 226 Q290 221 313 231 Q297 250 278 255 Q257 259 239 245 Q231 236 244 226Z" fill="url(#orange)" stroke="#d9680d" stroke-width="5" stroke-linejoin="round"/>
+  <path d="M247 231 Q269 235 302 233" fill="none" stroke="#fff0a3" stroke-width="4" stroke-linecap="round"/>
+  <!-- feet -->
+  <path d="M215 448 L212 466 M212 464 Q194 465 190 477 Q207 483 221 475 Q234 485 247 477 Q242 465 222 464" fill="none" stroke="#e87917" stroke-width="9" stroke-linecap="round" stroke-linejoin="round"/>
+  <path d="M293 448 L296 466 M296 464 Q278 465 274 477 Q291 483 305 475 Q318 485 331 477 Q326 465 306 464" fill="none" stroke="#e87917" stroke-width="9" stroke-linecap="round" stroke-linejoin="round"/>
+  <!-- small cheek accents -->
+  <ellipse cx="178" cy="247" rx="10" ry="5" fill="#f5a5a0" opacity=".45"/><ellipse cx="337" cy="247" rx="10" ry="5" fill="#f5a5a0" opacity=".45"/>
+</svg>
+</div><div class="speech app-speech">Eu confiro jornada, repouso e horas extras.</div></section><section class="scene" data-scene="4" data-start="410" data-frames="130"><div class="laptop"><div class="screen"><img src="file:///C:/Users/Suporte Tecnova/Desktop/Cuco/videos/capture/invitations.png"></div><div class="base"><span></span></div></div>
+       <div class="caption"><strong>Convites</strong><span>O administrador aprova quem entra no sistema.</span></div>
+       <div class="mascot-corner"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" role="img" aria-labelledby="title desc">
+  <title id="title">Mascote passarinho verde</title>
+  <desc id="desc">Passarinho simpático verde e branco, com olhos grandes, bico laranja e asa levantada em sinal positivo.</desc>
+  <defs>
+    <linearGradient id="green" x1=".12" y1="0" x2=".88" y2="1"><stop stop-color="#54df79"/><stop offset=".48" stop-color="#19ad59"/><stop offset="1" stop-color="#08743f"/></linearGradient>
+    <linearGradient id="wing" x1="0" y1="0" x2="1" y2="1"><stop stop-color="#4be276"/><stop offset="1" stop-color="#078044"/></linearGradient>
+    <linearGradient id="white" x1="0" y1="0" x2=".3" y2="1"><stop stop-color="#fff"/><stop offset="1" stop-color="#e8f5ed"/></linearGradient>
+    <linearGradient id="orange" x1="0" y1="0" x2="0" y2="1"><stop stop-color="#ffe16a"/><stop offset=".55" stop-color="#ff9d1b"/><stop offset="1" stop-color="#e96a12"/></linearGradient>
+    <filter id="shadow" x="-30%" y="-30%" width="160%" height="170%"><feGaussianBlur stdDeviation="9"/></filter>
+  </defs>
+  <!-- soft grounding shadow -->
+  <ellipse cx="256" cy="465" rx="126" ry="17" fill="#063e2a" opacity=".16" filter="url(#shadow)"/>
+  <!-- tail feathers -->
+  <path d="M151 335 Q91 307 80 345 Q112 383 174 381Z" fill="#087c45" stroke="#075c38" stroke-width="8" stroke-linejoin="round"/>
+  <path d="M155 357 Q94 356 94 398 Q143 416 188 384Z" fill="#159b50" stroke="#075c38" stroke-width="8" stroke-linejoin="round"/>
+  <!-- body -->
+  <path d="M157 270 Q119 325 145 394 Q168 459 256 462 Q348 462 371 391 Q394 320 350 267Z" fill="url(#green)" stroke="#075b38" stroke-width="10" stroke-linejoin="round"/>
+  <!-- belly -->
+  <path d="M177 323 Q157 375 183 419 Q207 449 260 448 Q318 447 340 412 Q363 370 335 322 Q258 347 177 323Z" fill="url(#white)"/>
+  <path d="M195 365 Q207 405 237 416" fill="none" stroke="#d8eee0" stroke-width="8" stroke-linecap="round" opacity=".8"/>
+  <!-- left wing -->
+  <path d="M157 303 Q103 312 105 366 Q110 415 172 411 Q204 404 223 365 Q197 329 157 303Z" fill="url(#wing)" stroke="#075b38" stroke-width="9" stroke-linejoin="round"/>
+  <path d="M129 361 Q154 349 184 367 M132 389 Q163 376 190 386" fill="none" stroke="#8af09d" stroke-width="7" stroke-linecap="round" opacity=".7"/>
+  <!-- raised right wing / thumbs-up -->
+  <path class="wave-arm" d="M347 315 Q389 304 403 337 Q417 371 391 405 Q369 432 337 413 Q316 399 323 373Z" fill="url(#wing)" stroke="#075b38" stroke-width="9" stroke-linejoin="round"/>
+  <path class="wave-arm" d="M355 321 Q348 283 368 253 Q381 235 395 250 Q405 263 394 291 Q422 277 435 294 Q445 310 427 326 Q447 330 445 348 Q443 365 420 369 Q434 386 419 399 Q401 415 381 396 L354 376Z" fill="url(#green)" stroke="#075b38" stroke-width="9" stroke-linejoin="round"/>
+  <path class="wave-arm" d="M391 304 Q405 298 419 306 M397 339 Q413 332 429 340 M389 372 Q403 366 416 375" fill="none" stroke="#a0f5a9" stroke-width="6" stroke-linecap="round" opacity=".8"/>
+  <!-- head -->
+  <path d="M146 215 Q139 127 202 91 Q217 48 247 76 Q269 42 293 83 Q354 91 375 151 Q399 214 365 278 Q335 326 256 326 Q174 326 145 269 Q132 243 146 215Z" fill="url(#green)" stroke="#075b38" stroke-width="10" stroke-linejoin="round"/>
+  <!-- feather crest -->
+  <path d="M210 94 Q190 54 218 43 Q239 39 251 75 Q262 39 283 50 Q302 62 289 94" fill="#49d96d" stroke="#075b38" stroke-width="8" stroke-linejoin="round"/>
+  <path d="M218 57 Q233 59 245 83 M271 62 Q278 73 278 88" fill="none" stroke="#a5f5a9" stroke-width="6" stroke-linecap="round"/>
+  <!-- face patch -->
+  <path d="M164 204 Q168 145 216 139 Q241 134 256 159 Q278 131 311 141 Q354 153 358 207 Q365 272 310 291 Q256 311 202 290 Q153 270 164 204Z" fill="url(#white)"/>
+  <!-- brows -->
+  <path d="M190 169 Q210 151 232 166 M280 165 Q304 148 325 165" fill="none" stroke="#075333" stroke-width="9" stroke-linecap="round"/>
+  <!-- eyes -->
+  <ellipse cx="214" cy="207" rx="25" ry="33" fill="#064b36"/>
+  <ellipse cx="299" cy="207" rx="25" ry="33" fill="#064b36"/>
+  <ellipse cx="216" cy="214" rx="16" ry="23" fill="#0b8d58"/>
+  <ellipse cx="297" cy="214" rx="16" ry="23" fill="#0b8d58"/>
+  <circle cx="208" cy="196" r="9" fill="#fff"/><circle cx="291" cy="196" r="9" fill="#fff"/>
+  <circle cx="224" cy="220" r="4" fill="#b9ffd0"/><circle cx="305" cy="220" r="4" fill="#b9ffd0"/>
+  <!-- beak -->
+  <path d="M244 226 Q256 216 269 226 Q290 221 313 231 Q297 250 278 255 Q257 259 239 245 Q231 236 244 226Z" fill="url(#orange)" stroke="#d9680d" stroke-width="5" stroke-linejoin="round"/>
+  <path d="M247 231 Q269 235 302 233" fill="none" stroke="#fff0a3" stroke-width="4" stroke-linecap="round"/>
+  <!-- feet -->
+  <path d="M215 448 L212 466 M212 464 Q194 465 190 477 Q207 483 221 475 Q234 485 247 477 Q242 465 222 464" fill="none" stroke="#e87917" stroke-width="9" stroke-linecap="round" stroke-linejoin="round"/>
+  <path d="M293 448 L296 466 M296 464 Q278 465 274 477 Q291 483 305 475 Q318 485 331 477 Q326 465 306 464" fill="none" stroke="#e87917" stroke-width="9" stroke-linecap="round" stroke-linejoin="round"/>
+  <!-- small cheek accents -->
+  <ellipse cx="178" cy="247" rx="10" ry="5" fill="#f5a5a0" opacity=".45"/><ellipse cx="337" cy="247" rx="10" ry="5" fill="#f5a5a0" opacity=".45"/>
+</svg>
+</div><div class="speech app-speech">Gere um código e aprove o vínculo.</div></section><section class="scene" data-scene="5" data-start="540" data-frames="130"><div class="laptop"><div class="screen"><img src="file:///C:/Users/Suporte Tecnova/Desktop/Cuco/videos/capture/audit.png"></div><div class="base"><span></span></div></div>
+       <div class="caption"><strong>Auditoria</strong><span>Cada ação fica registrada com usuário e data.</span></div>
+       <div class="mascot-corner"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" role="img" aria-labelledby="title desc">
+  <title id="title">Mascote passarinho verde</title>
+  <desc id="desc">Passarinho simpático verde e branco, com olhos grandes, bico laranja e asa levantada em sinal positivo.</desc>
+  <defs>
+    <linearGradient id="green" x1=".12" y1="0" x2=".88" y2="1"><stop stop-color="#54df79"/><stop offset=".48" stop-color="#19ad59"/><stop offset="1" stop-color="#08743f"/></linearGradient>
+    <linearGradient id="wing" x1="0" y1="0" x2="1" y2="1"><stop stop-color="#4be276"/><stop offset="1" stop-color="#078044"/></linearGradient>
+    <linearGradient id="white" x1="0" y1="0" x2=".3" y2="1"><stop stop-color="#fff"/><stop offset="1" stop-color="#e8f5ed"/></linearGradient>
+    <linearGradient id="orange" x1="0" y1="0" x2="0" y2="1"><stop stop-color="#ffe16a"/><stop offset=".55" stop-color="#ff9d1b"/><stop offset="1" stop-color="#e96a12"/></linearGradient>
+    <filter id="shadow" x="-30%" y="-30%" width="160%" height="170%"><feGaussianBlur stdDeviation="9"/></filter>
+  </defs>
+  <!-- soft grounding shadow -->
+  <ellipse cx="256" cy="465" rx="126" ry="17" fill="#063e2a" opacity=".16" filter="url(#shadow)"/>
+  <!-- tail feathers -->
+  <path d="M151 335 Q91 307 80 345 Q112 383 174 381Z" fill="#087c45" stroke="#075c38" stroke-width="8" stroke-linejoin="round"/>
+  <path d="M155 357 Q94 356 94 398 Q143 416 188 384Z" fill="#159b50" stroke="#075c38" stroke-width="8" stroke-linejoin="round"/>
+  <!-- body -->
+  <path d="M157 270 Q119 325 145 394 Q168 459 256 462 Q348 462 371 391 Q394 320 350 267Z" fill="url(#green)" stroke="#075b38" stroke-width="10" stroke-linejoin="round"/>
+  <!-- belly -->
+  <path d="M177 323 Q157 375 183 419 Q207 449 260 448 Q318 447 340 412 Q363 370 335 322 Q258 347 177 323Z" fill="url(#white)"/>
+  <path d="M195 365 Q207 405 237 416" fill="none" stroke="#d8eee0" stroke-width="8" stroke-linecap="round" opacity=".8"/>
+  <!-- left wing -->
+  <path d="M157 303 Q103 312 105 366 Q110 415 172 411 Q204 404 223 365 Q197 329 157 303Z" fill="url(#wing)" stroke="#075b38" stroke-width="9" stroke-linejoin="round"/>
+  <path d="M129 361 Q154 349 184 367 M132 389 Q163 376 190 386" fill="none" stroke="#8af09d" stroke-width="7" stroke-linecap="round" opacity=".7"/>
+  <!-- raised right wing / thumbs-up -->
+  <path class="wave-arm" d="M347 315 Q389 304 403 337 Q417 371 391 405 Q369 432 337 413 Q316 399 323 373Z" fill="url(#wing)" stroke="#075b38" stroke-width="9" stroke-linejoin="round"/>
+  <path class="wave-arm" d="M355 321 Q348 283 368 253 Q381 235 395 250 Q405 263 394 291 Q422 277 435 294 Q445 310 427 326 Q447 330 445 348 Q443 365 420 369 Q434 386 419 399 Q401 415 381 396 L354 376Z" fill="url(#green)" stroke="#075b38" stroke-width="9" stroke-linejoin="round"/>
+  <path class="wave-arm" d="M391 304 Q405 298 419 306 M397 339 Q413 332 429 340 M389 372 Q403 366 416 375" fill="none" stroke="#a0f5a9" stroke-width="6" stroke-linecap="round" opacity=".8"/>
+  <!-- head -->
+  <path d="M146 215 Q139 127 202 91 Q217 48 247 76 Q269 42 293 83 Q354 91 375 151 Q399 214 365 278 Q335 326 256 326 Q174 326 145 269 Q132 243 146 215Z" fill="url(#green)" stroke="#075b38" stroke-width="10" stroke-linejoin="round"/>
+  <!-- feather crest -->
+  <path d="M210 94 Q190 54 218 43 Q239 39 251 75 Q262 39 283 50 Q302 62 289 94" fill="#49d96d" stroke="#075b38" stroke-width="8" stroke-linejoin="round"/>
+  <path d="M218 57 Q233 59 245 83 M271 62 Q278 73 278 88" fill="none" stroke="#a5f5a9" stroke-width="6" stroke-linecap="round"/>
+  <!-- face patch -->
+  <path d="M164 204 Q168 145 216 139 Q241 134 256 159 Q278 131 311 141 Q354 153 358 207 Q365 272 310 291 Q256 311 202 290 Q153 270 164 204Z" fill="url(#white)"/>
+  <!-- brows -->
+  <path d="M190 169 Q210 151 232 166 M280 165 Q304 148 325 165" fill="none" stroke="#075333" stroke-width="9" stroke-linecap="round"/>
+  <!-- eyes -->
+  <ellipse cx="214" cy="207" rx="25" ry="33" fill="#064b36"/>
+  <ellipse cx="299" cy="207" rx="25" ry="33" fill="#064b36"/>
+  <ellipse cx="216" cy="214" rx="16" ry="23" fill="#0b8d58"/>
+  <ellipse cx="297" cy="214" rx="16" ry="23" fill="#0b8d58"/>
+  <circle cx="208" cy="196" r="9" fill="#fff"/><circle cx="291" cy="196" r="9" fill="#fff"/>
+  <circle cx="224" cy="220" r="4" fill="#b9ffd0"/><circle cx="305" cy="220" r="4" fill="#b9ffd0"/>
+  <!-- beak -->
+  <path d="M244 226 Q256 216 269 226 Q290 221 313 231 Q297 250 278 255 Q257 259 239 245 Q231 236 244 226Z" fill="url(#orange)" stroke="#d9680d" stroke-width="5" stroke-linejoin="round"/>
+  <path d="M247 231 Q269 235 302 233" fill="none" stroke="#fff0a3" stroke-width="4" stroke-linecap="round"/>
+  <!-- feet -->
+  <path d="M215 448 L212 466 M212 464 Q194 465 190 477 Q207 483 221 475 Q234 485 247 477 Q242 465 222 464" fill="none" stroke="#e87917" stroke-width="9" stroke-linecap="round" stroke-linejoin="round"/>
+  <path d="M293 448 L296 466 M296 464 Q278 465 274 477 Q291 483 305 475 Q318 485 331 477 Q326 465 306 464" fill="none" stroke="#e87917" stroke-width="9" stroke-linecap="round" stroke-linejoin="round"/>
+  <!-- small cheek accents -->
+  <ellipse cx="178" cy="247" rx="10" ry="5" fill="#f5a5a0" opacity=".45"/><ellipse cx="337" cy="247" rx="10" ry="5" fill="#f5a5a0" opacity=".45"/>
+</svg>
+</div><div class="speech app-speech">Tudo registrado, com IP e data.</div></section><section class="scene" data-scene="6" data-start="670" data-frames="80"><div class="center"><img class="center-logo" src="file:///C:/Users/Suporte Tecnova/Desktop/Cuco/public/assets/logo-escuro-compacto.png"><div class="mascot-center"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" role="img" aria-labelledby="title desc">
+  <title id="title">Mascote passarinho verde</title>
+  <desc id="desc">Passarinho simpático verde e branco, com olhos grandes, bico laranja e asa levantada em sinal positivo.</desc>
+  <defs>
+    <linearGradient id="green" x1=".12" y1="0" x2=".88" y2="1"><stop stop-color="#54df79"/><stop offset=".48" stop-color="#19ad59"/><stop offset="1" stop-color="#08743f"/></linearGradient>
+    <linearGradient id="wing" x1="0" y1="0" x2="1" y2="1"><stop stop-color="#4be276"/><stop offset="1" stop-color="#078044"/></linearGradient>
+    <linearGradient id="white" x1="0" y1="0" x2=".3" y2="1"><stop stop-color="#fff"/><stop offset="1" stop-color="#e8f5ed"/></linearGradient>
+    <linearGradient id="orange" x1="0" y1="0" x2="0" y2="1"><stop stop-color="#ffe16a"/><stop offset=".55" stop-color="#ff9d1b"/><stop offset="1" stop-color="#e96a12"/></linearGradient>
+    <filter id="shadow" x="-30%" y="-30%" width="160%" height="170%"><feGaussianBlur stdDeviation="9"/></filter>
+  </defs>
+  <!-- soft grounding shadow -->
+  <ellipse cx="256" cy="465" rx="126" ry="17" fill="#063e2a" opacity=".16" filter="url(#shadow)"/>
+  <!-- tail feathers -->
+  <path d="M151 335 Q91 307 80 345 Q112 383 174 381Z" fill="#087c45" stroke="#075c38" stroke-width="8" stroke-linejoin="round"/>
+  <path d="M155 357 Q94 356 94 398 Q143 416 188 384Z" fill="#159b50" stroke="#075c38" stroke-width="8" stroke-linejoin="round"/>
+  <!-- body -->
+  <path d="M157 270 Q119 325 145 394 Q168 459 256 462 Q348 462 371 391 Q394 320 350 267Z" fill="url(#green)" stroke="#075b38" stroke-width="10" stroke-linejoin="round"/>
+  <!-- belly -->
+  <path d="M177 323 Q157 375 183 419 Q207 449 260 448 Q318 447 340 412 Q363 370 335 322 Q258 347 177 323Z" fill="url(#white)"/>
+  <path d="M195 365 Q207 405 237 416" fill="none" stroke="#d8eee0" stroke-width="8" stroke-linecap="round" opacity=".8"/>
+  <!-- left wing -->
+  <path d="M157 303 Q103 312 105 366 Q110 415 172 411 Q204 404 223 365 Q197 329 157 303Z" fill="url(#wing)" stroke="#075b38" stroke-width="9" stroke-linejoin="round"/>
+  <path d="M129 361 Q154 349 184 367 M132 389 Q163 376 190 386" fill="none" stroke="#8af09d" stroke-width="7" stroke-linecap="round" opacity=".7"/>
+  <!-- raised right wing / thumbs-up -->
+  <path class="wave-arm" d="M347 315 Q389 304 403 337 Q417 371 391 405 Q369 432 337 413 Q316 399 323 373Z" fill="url(#wing)" stroke="#075b38" stroke-width="9" stroke-linejoin="round"/>
+  <path class="wave-arm" d="M355 321 Q348 283 368 253 Q381 235 395 250 Q405 263 394 291 Q422 277 435 294 Q445 310 427 326 Q447 330 445 348 Q443 365 420 369 Q434 386 419 399 Q401 415 381 396 L354 376Z" fill="url(#green)" stroke="#075b38" stroke-width="9" stroke-linejoin="round"/>
+  <path class="wave-arm" d="M391 304 Q405 298 419 306 M397 339 Q413 332 429 340 M389 372 Q403 366 416 375" fill="none" stroke="#a0f5a9" stroke-width="6" stroke-linecap="round" opacity=".8"/>
+  <!-- head -->
+  <path d="M146 215 Q139 127 202 91 Q217 48 247 76 Q269 42 293 83 Q354 91 375 151 Q399 214 365 278 Q335 326 256 326 Q174 326 145 269 Q132 243 146 215Z" fill="url(#green)" stroke="#075b38" stroke-width="10" stroke-linejoin="round"/>
+  <!-- feather crest -->
+  <path d="M210 94 Q190 54 218 43 Q239 39 251 75 Q262 39 283 50 Q302 62 289 94" fill="#49d96d" stroke="#075b38" stroke-width="8" stroke-linejoin="round"/>
+  <path d="M218 57 Q233 59 245 83 M271 62 Q278 73 278 88" fill="none" stroke="#a5f5a9" stroke-width="6" stroke-linecap="round"/>
+  <!-- face patch -->
+  <path d="M164 204 Q168 145 216 139 Q241 134 256 159 Q278 131 311 141 Q354 153 358 207 Q365 272 310 291 Q256 311 202 290 Q153 270 164 204Z" fill="url(#white)"/>
+  <!-- brows -->
+  <path d="M190 169 Q210 151 232 166 M280 165 Q304 148 325 165" fill="none" stroke="#075333" stroke-width="9" stroke-linecap="round"/>
+  <!-- eyes -->
+  <ellipse cx="214" cy="207" rx="25" ry="33" fill="#064b36"/>
+  <ellipse cx="299" cy="207" rx="25" ry="33" fill="#064b36"/>
+  <ellipse cx="216" cy="214" rx="16" ry="23" fill="#0b8d58"/>
+  <ellipse cx="297" cy="214" rx="16" ry="23" fill="#0b8d58"/>
+  <circle cx="208" cy="196" r="9" fill="#fff"/><circle cx="291" cy="196" r="9" fill="#fff"/>
+  <circle cx="224" cy="220" r="4" fill="#b9ffd0"/><circle cx="305" cy="220" r="4" fill="#b9ffd0"/>
+  <!-- beak -->
+  <path d="M244 226 Q256 216 269 226 Q290 221 313 231 Q297 250 278 255 Q257 259 239 245 Q231 236 244 226Z" fill="url(#orange)" stroke="#d9680d" stroke-width="5" stroke-linejoin="round"/>
+  <path d="M247 231 Q269 235 302 233" fill="none" stroke="#fff0a3" stroke-width="4" stroke-linecap="round"/>
+  <!-- feet -->
+  <path d="M215 448 L212 466 M212 464 Q194 465 190 477 Q207 483 221 475 Q234 485 247 477 Q242 465 222 464" fill="none" stroke="#e87917" stroke-width="9" stroke-linecap="round" stroke-linejoin="round"/>
+  <path d="M293 448 L296 466 M296 464 Q278 465 274 477 Q291 483 305 475 Q318 485 331 477 Q326 465 306 464" fill="none" stroke="#e87917" stroke-width="9" stroke-linecap="round" stroke-linejoin="round"/>
+  <!-- small cheek accents -->
+  <ellipse cx="178" cy="247" rx="10" ry="5" fill="#f5a5a0" opacity=".45"/><ellipse cx="337" cy="247" rx="10" ry="5" fill="#f5a5a0" opacity=".45"/>
+</svg>
+</div><div class="speech">Veja o código no repositório!</div>
+       <div class="caption center-caption"><strong>Ver repositório</strong><span>github.com/MapheBR/cuco</span></div></div></section>
+  <div class="progress"><span id="bar"></span></div><div class="footer">cuco · controle de escalas</div>
+</div><script>
+const scenes=[...document.querySelectorAll('.scene')];
+window.setFrame=function(f){
+  const total=750;
+  document.getElementById('stage').style.setProperty('--wave',(Math.sin(f*0.3)*14)+'deg');
+  scenes.forEach((s,i)=>{
+    const start=+s.dataset.start, frames=+s.dataset.frames;
+    const active=f>=start && f<start+frames;
+    const local=active?(f-start)/frames:0;
+    s.style.opacity=active?Math.min(1,local*8):0;
+    if(active){
+      const cap=s.querySelector('.caption');
+      if(cap) cap.style.opacity=Math.max(0,Math.min(1,(local-0.12)*7));
+      s.querySelectorAll('.speech').forEach((bubble)=>{
+        const pop=Math.max(0,Math.min(1,(local-0.04)*9));
+        const eased=1-Math.pow(1-pop,3);
+        bubble.style.setProperty('--bubble-scale',(0.72+0.28*eased).toFixed(3));
+        bubble.style.setProperty('--bubble-y',((1-eased)*14+Math.sin(f*0.25)*1.5).toFixed(1)+'px');
+        bubble.style.setProperty('--bubble-opacity',eased.toFixed(3));
+      });
+    }
+  });
+  document.getElementById('bar').style.width=(f/total*100)+'%';
+};
+window.setFrame(0);
+</script></body></html>

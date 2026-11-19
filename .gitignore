@@ -1,4 +1,7 @@
 node_modules/
+.env
+.env.*
+!.env.example
 data/*.db
 data/*.db-*
 data/.secret
@@ -13,3 +16,5 @@ videos/frames/
 videos/frames-pro/
 
 videos/frames-hd/
+
+videos/frames-linkedin/

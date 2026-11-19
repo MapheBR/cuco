@@ -1,0 +1,29 @@
+name: Relatar bug
+description: Reporte um comportamento inesperado no Cuco
+title: "[Bug]: "
+labels: [bug]
+body:
+  - type: textarea
+    id: what
+    attributes:
+      label: O que aconteceu?
+    validations:
+      required: true
+  - type: textarea
+    id: expected
+    attributes:
+      label: O que era esperado?
+    validations:
+      required: true
+  - type: textarea
+    id: steps
+    attributes:
+      label: Passos para reproduzir
+      placeholder: 1. Faça login... 2. Abra... 3. ...
+    validations:
+      required: true
+  - type: input
+    id: version
+    attributes:
+      label: Versão do Cuco / Node
+      placeholder: "1.0.0 / Node 22.14"
